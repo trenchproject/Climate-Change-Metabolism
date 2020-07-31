@@ -92,23 +92,23 @@ get_weather_stations <- function(lat_lon_df, year_min, year_max, radius, limit){
                           limit = limit)
 }
 
-monitors <- c("ASN00095063", "ASN00024025", "ASN00040112", "ASN00041023",
-              "ASN00009998", "ASN00066078", "ASN00003069", "ASN00090162",
-              "ASN00040126", "ASN00058161")
-obs <- meteo_pull_monitors(head(stations[1], 10)$id)
-obs_covr <- meteo_coverage(obs)
+# monitors <- c("USC00457933", "USW00024157", "USW00024114", "ASN00041023",
+#               "ASN00009998", "ASN00066078", "ASN00003069", "ASN00090162",
+#               "ASN00040126", "ASN00058161")
+# obs <- meteo_pull_monitors(monitors)
+# obs_covr <- meteo_coverage(obs)
+# 
+# if (interactive()) {
+#     library("ggplot2")
+#     autoplot(obs_covr)
+# }
 
-if (interactive()) {
-    library("ggplot2")
-    autoplot(obs_covr)
-}
-
-get_weather <- function(zipcode, radius = 250, start_date = as.Date('1961-01-01'), end_date = Sys.Date()){
+get_weather <- function(zipcode, start_date = as.Date('1961-01-01'), end_date = Sys.Date(), radius = 200, limit = 50){
     if(!is.Date(start_date)){start_date <- as.Date(start_date)}
     if(!is.Date(end_date)){end_date <- as.Date(end_date)}
     latLon <- get_zipcode_info(zipcode) %>% select(id, latitude, longitude)
     print(latLon)
-    stations <- get_weather_stations(latLon, year(start_date), year(end_date), radius, 30)[[1]]
+    stations <- get_weather_stations(latLon, year(start_date), year(end_date), radius, limit)[[1]]
     print(stations)
     current_date <- start_date
     weather_master <- list()
@@ -116,11 +116,11 @@ get_weather <- function(zipcode, radius = 250, start_date = as.Date('1961-01-01'
     while(current_date < end_date){
         i <- 0
         tmax <- c()
-        tmax$data[[1]] <- c()
+        tmax$data <- c()
         tmin <- c()
-        tmin$data[[1]] <- c()
-        print(str_c("Gathering weather data for ", year(current_date), " from ", stations$id[i]))
-        while((length(tmax$data[[1]]) == 0 || length(tmin$data[[1]] == 0)) && i < length(stations$id)){
+        tmin$data <- c()
+        print(str_c("Gathering weather data for ", year(current_date)))
+        while((i < length(stations$id)) && (length(tmax$data) == 0 || length(tmin$data) == 0)){
             if((start_date %m+% years(1)) < end_date)
                 {temp_end_date <- start_date %m+% years(1)}
             else{temp_end_date <- end_date}
@@ -138,8 +138,14 @@ get_weather <- function(zipcode, radius = 250, start_date = as.Date('1961-01-01'
                          datatypeid = "TMAX", 
                          startdate = current_date, 
                          enddate = temp_end_date, 
-                         token = "HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")}
+                         token = "HnmvXmMXFNeHpkLROUmJndwOyDPXATFJ")
+            glimpse(tmax$data)
+            glimpse(tmin$data)}
 
+        if(length(tmax$data) == 0 || length(tmin$data) == 0){
+            print("No weather data found, please increase limit or radius")
+            return(weather_master)}else{
+            print("Weather data found, recording now.")}
         weather_master[[num_years_data]] <- list(year = year(current_date),
                                                  station_id = stations$id[i],
                                                  tmax = tmax, 
