@@ -5,6 +5,7 @@ library(tidyverse)
 library(rnoaa)
 library(plotly)
 library(lubridate)
+library(zoo)
 
 #Data source: https://www.nature.com/articles/nature09407
 #Mass is is grams 
@@ -14,6 +15,7 @@ metabolics <- data.frame("taxon" = c("unicells", "plants", "invertebrates", "amp
                          "E" = c(0.76, 0.66, 0.79, 0.5, 0.76, 0.69),
                          "mass_min" = c(0.000000000001, 0.1, 0.0001, 0.1, 10, 0.000000000001),
                          "mass_max" = c(0.1, 100, 100, 100, 10000, 10000))
+
 # b0 --- an empirically derived and taxon specific normalization constant
 # m ---- body mass 
 # E ---- average activation energy for biochemical reactions of metabolism 
@@ -155,7 +157,87 @@ get_weather <- function(zipcode, start_date = as.Date('1961-01-01'), end_date = 
     return(weather_master)
 }
 
+count <- 1 
+master <- list()
+zipcodes <- c("02111", "10001", "27514", "33101", "22434")
+for(i in zipcodes){
+    print(i)
+    master[[count]] <- list(zipcode = i,
+                            data = get_weather(i))
+    
+    count <- count + 1 
+}
 
+#Weather available as TAVG for Brazil
+brazil_weather <- read.csv("./dat/campinas_brazil.csv")
+
+#Convert TMIN/TMAX to TAVG for standardized temperature methodology
+yakima_weather <- read.csv("./dat/yakima_washington.csv") 
+yakima_weather$TAVG <- rowMeans(yakima_weather[5:6], na.rm = FALSE)
+
+brazil_weather$TAVG.F <- brazil_weather$TAVG
+brazil_weather$TAVG <- NULL
+brazil_weather$TAVG.K <- sapply(brazil_weather$TAVG.F, function(x){return(((x - 32) * 5/9) + 273.15)})
+brazil_weather$unicells <- sapply(brazil_weather$TAVG.K, function(x){
+    return(metabolic_rate(b0 = metabolics[1, "b0"],
+                          m = metabolics[1, "mass_max"],
+                          E = metabolics[1, "E"],
+                          temp = x))})
+brazil_weather$reptiles <- sapply(brazil_weather$TAVG.K, function(x){
+    return(metabolic_rate(b0 = metabolics[5, "b0"],
+                          m = metabolics[5, "mass_max"],
+                          E = metabolics[5, "E"],
+                          temp = x))})
+brazil_weather$DATE <- as.Date(brazil_weather$DATE)
+
+#means are 5 year intervals beginning at the start date, with the exception of the first entry which is the standard reference period mean (1961-1990)
+brazil_climate <- data.frame(
+    start_date = c(
+        as.Date('1961-01-01'), 
+        as.Date('1980-01-01'), 
+        as.Date('1985-01-01'), 
+        as.Date('1990-01-01'), 
+        as.Date('1995-01-01'), 
+        as.Date('2000-01-01'), 
+        as.Date('2005-01-01'), 
+        as.Date('2010-01-01'), 
+        as.Date('2015-01-01')),
+    mean_tavg = c(
+        mean(brazil_weather$TAVG.K[which(brazil_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
+        mean(brazil_weather$TAVG.K[which((brazil_weather$DATE >= as.Date('1980-01-01')) & (brazil_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$TAVG.K[which((brazil_weather$DATE >= as.Date('1985-01-01')) & (brazil_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$TAVG.K[which((brazil_weather$DATE >= as.Date('1990-01-01')) & (brazil_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$TAVG.K[which((brazil_weather$DATE >= as.Date('1995-01-01')) & (brazil_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$TAVG.K[which((brazil_weather$DATE >= as.Date('2000-01-01')) & (brazil_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$TAVG.K[which((brazil_weather$DATE >= as.Date('2005-01-01')) & (brazil_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$TAVG.K[which((brazil_weather$DATE >= as.Date('2010-01-01')) & (brazil_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$TAVG.K[which((brazil_weather$DATE >= as.Date('2015-01-01')) & (brazil_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
+    mean_reptiles = c(
+        mean(brazil_weather$reptiles[which(brazil_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
+        mean(brazil_weather$reptiles[which((brazil_weather$DATE >= as.Date('1980-01-01')) & (brazil_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$reptiles[which((brazil_weather$DATE >= as.Date('1985-01-01')) & (brazil_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$reptiles[which((brazil_weather$DATE >= as.Date('1990-01-01')) & (brazil_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$reptiles[which((brazil_weather$DATE >= as.Date('1995-01-01')) & (brazil_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$reptiles[which((brazil_weather$DATE >= as.Date('2000-01-01')) & (brazil_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$reptiles[which((brazil_weather$DATE >= as.Date('2005-01-01')) & (brazil_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$reptiles[which((brazil_weather$DATE >= as.Date('2010-01-01')) & (brazil_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$reptiles[which((brazil_weather$DATE >= as.Date('2015-01-01')) & (brazil_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
+    mean_unicells = c(
+        mean(brazil_weather$unicells[which(brazil_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
+        mean(brazil_weather$unicells[which((brazil_weather$DATE >= as.Date('1980-01-01')) & (brazil_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$unicells[which((brazil_weather$DATE >= as.Date('1985-01-01')) & (brazil_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$unicells[which((brazil_weather$DATE >= as.Date('1990-01-01')) & (brazil_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$unicells[which((brazil_weather$DATE >= as.Date('1995-01-01')) & (brazil_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$unicells[which((brazil_weather$DATE >= as.Date('2000-01-01')) & (brazil_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$unicells[which((brazil_weather$DATE >= as.Date('2005-01-01')) & (brazil_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$unicells[which((brazil_weather$DATE >= as.Date('2010-01-01')) & (brazil_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
+        mean(brazil_weather$unicells[which((brazil_weather$DATE >= as.Date('2015-01-01')) & (brazil_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE))
+    )
+
+# brazil_plot <- plot_ly(brazil_weather[1:365,], x = ~DATE) %>% 
+#     add_lines(y = ~TAVG.K) %>% 
+#     add_lines(y = ~unicells) %>% 
+#     add_lines(y = ~reptiles)
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
