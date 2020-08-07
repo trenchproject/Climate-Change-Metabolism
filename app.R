@@ -4,7 +4,12 @@ library(rnoaa)
 library(plotly)
 library(lubridate)
 library(zoo)
-
+library(shinyBS)
+library(shinyWidgets)
+library(shinycssloaders)
+# library(mapdeck)
+# library(sp)
+library(leaflet)
 #Data source: https://www.nature.com/articles/nature09407
 #Mass is is grams 
 metabolics <- data.frame("taxon" = c("unicells", "plants", "invertebrates", "amphibians", "reptiles", "average"),
@@ -13,7 +18,6 @@ metabolics <- data.frame("taxon" = c("unicells", "plants", "invertebrates", "amp
                          "E" = c(0.76, 0.66, 0.79, 0.5, 0.76, 0.69),
                          "mass_min" = c(0.000000000001, 0.1, 0.0001, 0.1, 10, 0.000000000001),
                          "mass_max" = c(0.1, 100, 100, 100, 10000, 10000))
-
 # b0 --- an empirically derived and taxon specific normalization constant
 # m ---- body mass 
 # E ---- average activation energy for biochemical reactions of metabolism 
@@ -24,6 +28,8 @@ metabolic_rate <- function(b0, m, E, temp){
     return(b0*(m^(3/4))*exp(-E/(k*temp)))
 }
 
+
+#Query and return relavant information about a zipcode
 get_zipcode_info <- function(zipcode){
     zipcodes <- read_delim("./dat/us-zip-code-latitude-and-longitude.csv", delim = ";")
     zipLocation <- zipcodes %>% 
@@ -164,427 +170,142 @@ get_weather <- function(zipcode, start_date = as.Date('1961-01-01'), end_date = 
 #     
 #     count <- count + 1 
 # }
+#Read
+get_taxon_metabolics <- function(taxon, mass, weather_path = "./dat/yakima_washington.csv"){
+    #Convert TMIN/TMAX to TAVG for standardized temperature methodology
+    weather <- read.csv(weather_path) 
+    weather$TAVG <- rowMeans(weather[5:6], na.rm = FALSE)
+    weather$TAVG.F <- weather$TAVG
+    weather$TAVG <- NULL
+    weather$TAVG.K <- sapply(weather$TAVG.F, function(x){return(((x - 32) * 5/9) + 273.15)})
+    weather$DATE <- as.Date(weather$DATE)
+    # weather$unicells <- sapply(weather$TAVG.K, function(x){
+    #     return(metabolic_rate(b0 = metabolics[1, "b0"],
+    #                           m = (metabolics[1, "mass_min"] + metabolics[1, "mass_max"])/2,
+    #                           E = metabolics[1, "E"],
+    #                           temp = x))})
+    weather[taxon] <- sapply(weather$TAVG.K, function(x){
+        return(metabolic_rate(b0 = metabolics[1, "b0"],
+                              m = mass,
+                              E = metabolics[1, "E"],
+                              temp = x))})
+        
+    return(weather)
+}
 
-
-
-#Convert TMIN/TMAX to TAVG for standardized temperature methodology
-yakima_weather <- read.csv("./dat/yakima_washington.csv") 
-yakima_weather$TAVG <- rowMeans(yakima_weather[5:6], na.rm = FALSE)
-yakima_weather$TAVG.F <- yakima_weather$TAVG
-yakima_weather$TAVG <- NULL
-yakima_weather$TAVG.K <- sapply(yakima_weather$TAVG.F, function(x){return(((x - 32) * 5/9) + 273.15)})
-yakima_weather$unicells <- sapply(yakima_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[1, "b0"],
-                          m = metabolics[1, "mass_max"],
-                          E = metabolics[1, "E"],
-                          temp = x))})
-yakima_weather$plants <- sapply(yakima_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[2, "b0"],
-                          m = metabolics[2, "mass_max"],
-                          E = metabolics[2, "E"],
-                          temp = x))})
-yakima_weather$invertebrates <- sapply(yakima_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[3, "b0"],
-                          m = metabolics[3, "mass_max"],
-                          E = metabolics[3, "E"],
-                          temp = x))})
-yakima_weather$amphibians <- sapply(yakima_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[4, "b0"],
-                          m = metabolics[4, "mass_max"],
-                          E = metabolics[4, "E"],
-                          temp = x))})
-yakima_weather$reptiles <- sapply(yakima_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[5, "b0"],
-                          m = metabolics[5, "mass_max"],
-                          E = metabolics[5, "E"],
-                          temp = x))})
-yakima_weather$average <- sapply(yakima_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[6, "b0"],
-                          m = metabolics[6, "mass_max"],
-                          E = metabolics[6, "E"],
-                          temp = x))})
-yakima_weather$DATE <- as.Date(yakima_weather$DATE)
-
-#Weather available as TAVG for Brazil
-brazil_weather <- read.csv("./dat/campinas_brazil.csv")
-brazil_weather$TAVG.F <- brazil_weather$TAVG
-brazil_weather$TAVG <- NULL
-brazil_weather$TAVG.K <- sapply(brazil_weather$TAVG.F, function(x){return(((x - 32) * 5/9) + 273.15)})
-brazil_weather$unicells <- sapply(brazil_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[1, "b0"],
-                          m = metabolics[1, "mass_max"],
-                          E = metabolics[1, "E"],
-                          temp = x))})
-brazil_weather$plants <- sapply(brazil_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[2, "b0"],
-                          m = metabolics[2, "mass_max"],
-                          E = metabolics[2, "E"],
-                          temp = x))})
-brazil_weather$invertebrates <- sapply(brazil_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[3, "b0"],
-                          m = metabolics[3, "mass_max"],
-                          E = metabolics[3, "E"],
-                          temp = x))})
-brazil_weather$amphibians <- sapply(brazil_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[4, "b0"],
-                          m = metabolics[4, "mass_max"],
-                          E = metabolics[4, "E"],
-                          temp = x))})
-brazil_weather$reptiles <- sapply(brazil_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[5, "b0"],
-                          m = metabolics[5, "mass_max"],
-                          E = metabolics[5, "E"],
-                          temp = x))})
-brazil_weather$average <- sapply(brazil_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[6, "b0"],
-                          m = metabolics[6, "mass_max"],
-                          E = metabolics[6, "E"],
-                          temp = x))})
-brazil_weather$DATE <- as.Date(brazil_weather$DATE)
-
-#Weather available as TAVG for Brazil
-mexico_weather <- read.csv("./dat/tlaxcala_mexico.csv")
-mexico_weather$TAVG.F <- mexico_weather$TAVG
-mexico_weather$TAVG <- NULL
-mexico_weather$TAVG.K <- sapply(mexico_weather$TAVG.F, function(x){return(((x - 32) * 5/9) + 273.15)})
-mexico_weather$unicells <- sapply(mexico_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[1, "b0"],
-                          m = metabolics[1, "mass_max"],
-                          E = metabolics[1, "E"],
-                          temp = x))})
-mexico_weather$plants <- sapply(mexico_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[2, "b0"],
-                          m = metabolics[2, "mass_max"],
-                          E = metabolics[2, "E"],
-                          temp = x))})
-mexico_weather$invertebrates <- sapply(mexico_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[3, "b0"],
-                          m = metabolics[3, "mass_max"],
-                          E = metabolics[3, "E"],
-                          temp = x))})
-mexico_weather$amphibians <- sapply(mexico_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[4, "b0"],
-                          m = metabolics[4, "mass_max"],
-                          E = metabolics[4, "E"],
-                          temp = x))})
-mexico_weather$reptiles <- sapply(mexico_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[5, "b0"],
-                          m = metabolics[5, "mass_max"],
-                          E = metabolics[5, "E"],
-                          temp = x))})
-mexico_weather$average <- sapply(mexico_weather$TAVG.K, function(x){
-    return(metabolic_rate(b0 = metabolics[6, "b0"],
-                          m = metabolics[6, "mass_max"],
-                          E = metabolics[6, "E"],
-                          temp = x))})
-mexico_weather$DATE <- as.Date(mexico_weather$DATE)
-
-#means are 5 year intervals beginning at the start date, with the exception of the first entry which is the standard reference period mean (1961-1990)
-brazil_climate <- data.frame(
-    start_date = c(
-        as.Date('1961-01-01'), 
-        as.Date('1980-01-01'), 
-        as.Date('1985-01-01'), 
-        as.Date('1990-01-01'), 
-        as.Date('1995-01-01'), 
-        as.Date('2000-01-01'), 
-        as.Date('2005-01-01'), 
-        as.Date('2010-01-01'), 
-        as.Date('2015-01-01')),
-    end_date = c(
-        as.Date('1990-01-01'), 
-        as.Date('1985-01-01'), 
-        as.Date('1990-01-01'), 
-        as.Date('1995-01-01'), 
-        as.Date('2000-01-01'), 
-        as.Date('2005-01-01'), 
-        as.Date('2010-01-01'), 
-        as.Date('2015-01-01'), 
-        as.Date('2020-01-01')),
-    mean_tavg = c(
-        mean(brazil_weather$TAVG.K[which(brazil_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(brazil_weather$TAVG.K[which((brazil_weather$DATE >= as.Date('1980-01-01')) & (brazil_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$TAVG.K[which((brazil_weather$DATE >= as.Date('1985-01-01')) & (brazil_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$TAVG.K[which((brazil_weather$DATE >= as.Date('1990-01-01')) & (brazil_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$TAVG.K[which((brazil_weather$DATE >= as.Date('1995-01-01')) & (brazil_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$TAVG.K[which((brazil_weather$DATE >= as.Date('2000-01-01')) & (brazil_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$TAVG.K[which((brazil_weather$DATE >= as.Date('2005-01-01')) & (brazil_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$TAVG.K[which((brazil_weather$DATE >= as.Date('2010-01-01')) & (brazil_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$TAVG.K[which((brazil_weather$DATE >= as.Date('2015-01-01')) & (brazil_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_reptiles = c(
-        mean(brazil_weather$reptiles[which(brazil_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(brazil_weather$reptiles[which((brazil_weather$DATE >= as.Date('1980-01-01')) & (brazil_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$reptiles[which((brazil_weather$DATE >= as.Date('1985-01-01')) & (brazil_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$reptiles[which((brazil_weather$DATE >= as.Date('1990-01-01')) & (brazil_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$reptiles[which((brazil_weather$DATE >= as.Date('1995-01-01')) & (brazil_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$reptiles[which((brazil_weather$DATE >= as.Date('2000-01-01')) & (brazil_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$reptiles[which((brazil_weather$DATE >= as.Date('2005-01-01')) & (brazil_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$reptiles[which((brazil_weather$DATE >= as.Date('2010-01-01')) & (brazil_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$reptiles[which((brazil_weather$DATE >= as.Date('2015-01-01')) & (brazil_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_unicells = c(
-        mean(brazil_weather$unicells[which(brazil_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(brazil_weather$unicells[which((brazil_weather$DATE >= as.Date('1980-01-01')) & (brazil_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$unicells[which((brazil_weather$DATE >= as.Date('1985-01-01')) & (brazil_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$unicells[which((brazil_weather$DATE >= as.Date('1990-01-01')) & (brazil_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$unicells[which((brazil_weather$DATE >= as.Date('1995-01-01')) & (brazil_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$unicells[which((brazil_weather$DATE >= as.Date('2000-01-01')) & (brazil_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$unicells[which((brazil_weather$DATE >= as.Date('2005-01-01')) & (brazil_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$unicells[which((brazil_weather$DATE >= as.Date('2010-01-01')) & (brazil_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$unicells[which((brazil_weather$DATE >= as.Date('2015-01-01')) & (brazil_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_invertebrates = c(
-        mean(brazil_weather$invertebrates[which(brazil_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(brazil_weather$invertebrates[which((brazil_weather$DATE >= as.Date('1980-01-01')) & (brazil_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$invertebrates[which((brazil_weather$DATE >= as.Date('1985-01-01')) & (brazil_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$invertebrates[which((brazil_weather$DATE >= as.Date('1990-01-01')) & (brazil_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$invertebrates[which((brazil_weather$DATE >= as.Date('1995-01-01')) & (brazil_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$invertebrates[which((brazil_weather$DATE >= as.Date('2000-01-01')) & (brazil_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$invertebrates[which((brazil_weather$DATE >= as.Date('2005-01-01')) & (brazil_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$invertebrates[which((brazil_weather$DATE >= as.Date('2010-01-01')) & (brazil_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$invertebrates[which((brazil_weather$DATE >= as.Date('2015-01-01')) & (brazil_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_amphibians = c(
-        mean(brazil_weather$amphibians[which(brazil_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(brazil_weather$amphibians[which((brazil_weather$DATE >= as.Date('1980-01-01')) & (brazil_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$amphibians[which((brazil_weather$DATE >= as.Date('1985-01-01')) & (brazil_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$amphibians[which((brazil_weather$DATE >= as.Date('1990-01-01')) & (brazil_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$amphibians[which((brazil_weather$DATE >= as.Date('1995-01-01')) & (brazil_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$amphibians[which((brazil_weather$DATE >= as.Date('2000-01-01')) & (brazil_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$amphibians[which((brazil_weather$DATE >= as.Date('2005-01-01')) & (brazil_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$amphibians[which((brazil_weather$DATE >= as.Date('2010-01-01')) & (brazil_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$amphibians[which((brazil_weather$DATE >= as.Date('2015-01-01')) & (brazil_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_plants = c(
-        mean(brazil_weather$plants[which(brazil_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(brazil_weather$plants[which((brazil_weather$DATE >= as.Date('1980-01-01')) & (brazil_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$plants[which((brazil_weather$DATE >= as.Date('1985-01-01')) & (brazil_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$plants[which((brazil_weather$DATE >= as.Date('1990-01-01')) & (brazil_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$plants[which((brazil_weather$DATE >= as.Date('1995-01-01')) & (brazil_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$plants[which((brazil_weather$DATE >= as.Date('2000-01-01')) & (brazil_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$plants[which((brazil_weather$DATE >= as.Date('2005-01-01')) & (brazil_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$plants[which((brazil_weather$DATE >= as.Date('2010-01-01')) & (brazil_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$plants[which((brazil_weather$DATE >= as.Date('2015-01-01')) & (brazil_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_average = c(
-        mean(brazil_weather$average[which(brazil_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(brazil_weather$average[which((brazil_weather$DATE >= as.Date('1980-01-01')) & (brazil_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$average[which((brazil_weather$DATE >= as.Date('1985-01-01')) & (brazil_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$average[which((brazil_weather$DATE >= as.Date('1990-01-01')) & (brazil_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$average[which((brazil_weather$DATE >= as.Date('1995-01-01')) & (brazil_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$average[which((brazil_weather$DATE >= as.Date('2000-01-01')) & (brazil_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$average[which((brazil_weather$DATE >= as.Date('2005-01-01')) & (brazil_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$average[which((brazil_weather$DATE >= as.Date('2010-01-01')) & (brazil_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(brazil_weather$average[which((brazil_weather$DATE >= as.Date('2015-01-01')) & (brazil_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE))
-)
-
-#means are 5 year intervals beginning at the start date, with the exception of the first entry which is the standard reference period mean (1961-1990)
-yakima_climate <- data.frame(
-    start_date = c(
-        as.Date('1961-01-01'), 
-        as.Date('1980-01-01'), 
-        as.Date('1985-01-01'), 
-        as.Date('1990-01-01'), 
-        as.Date('1995-01-01'), 
-        as.Date('2000-01-01'), 
-        as.Date('2005-01-01'), 
-        as.Date('2010-01-01'), 
-        as.Date('2015-01-01')),
-    end_date = c(
-        as.Date('1990-01-01'), 
-        as.Date('1985-01-01'), 
-        as.Date('1990-01-01'), 
-        as.Date('1995-01-01'), 
-        as.Date('2000-01-01'), 
-        as.Date('2005-01-01'), 
-        as.Date('2010-01-01'), 
-        as.Date('2015-01-01'), 
-        as.Date('2020-01-01')),
-    mean_tavg = c(
-        mean(yakima_weather$TAVG.K[which(yakima_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(yakima_weather$TAVG.K[which((yakima_weather$DATE >= as.Date('1980-01-01')) & (yakima_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$TAVG.K[which((yakima_weather$DATE >= as.Date('1985-01-01')) & (yakima_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$TAVG.K[which((yakima_weather$DATE >= as.Date('1990-01-01')) & (yakima_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$TAVG.K[which((yakima_weather$DATE >= as.Date('1995-01-01')) & (yakima_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$TAVG.K[which((yakima_weather$DATE >= as.Date('2000-01-01')) & (yakima_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$TAVG.K[which((yakima_weather$DATE >= as.Date('2005-01-01')) & (yakima_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$TAVG.K[which((yakima_weather$DATE >= as.Date('2010-01-01')) & (yakima_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$TAVG.K[which((yakima_weather$DATE >= as.Date('2015-01-01')) & (yakima_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_reptiles = c(
-        mean(yakima_weather$reptiles[which(yakima_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(yakima_weather$reptiles[which((yakima_weather$DATE >= as.Date('1980-01-01')) & (yakima_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$reptiles[which((yakima_weather$DATE >= as.Date('1985-01-01')) & (yakima_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$reptiles[which((yakima_weather$DATE >= as.Date('1990-01-01')) & (yakima_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$reptiles[which((yakima_weather$DATE >= as.Date('1995-01-01')) & (yakima_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$reptiles[which((yakima_weather$DATE >= as.Date('2000-01-01')) & (yakima_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$reptiles[which((yakima_weather$DATE >= as.Date('2005-01-01')) & (yakima_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$reptiles[which((yakima_weather$DATE >= as.Date('2010-01-01')) & (yakima_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$reptiles[which((yakima_weather$DATE >= as.Date('2015-01-01')) & (yakima_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_unicells = c(
-        mean(yakima_weather$unicells[which(yakima_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(yakima_weather$unicells[which((yakima_weather$DATE >= as.Date('1980-01-01')) & (yakima_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$unicells[which((yakima_weather$DATE >= as.Date('1985-01-01')) & (yakima_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$unicells[which((yakima_weather$DATE >= as.Date('1990-01-01')) & (yakima_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$unicells[which((yakima_weather$DATE >= as.Date('1995-01-01')) & (yakima_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$unicells[which((yakima_weather$DATE >= as.Date('2000-01-01')) & (yakima_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$unicells[which((yakima_weather$DATE >= as.Date('2005-01-01')) & (yakima_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$unicells[which((yakima_weather$DATE >= as.Date('2010-01-01')) & (yakima_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$unicells[which((yakima_weather$DATE >= as.Date('2015-01-01')) & (yakima_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_invertebrates = c(
-        mean(yakima_weather$invertebrates[which(yakima_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(yakima_weather$invertebrates[which((yakima_weather$DATE >= as.Date('1980-01-01')) & (yakima_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$invertebrates[which((yakima_weather$DATE >= as.Date('1985-01-01')) & (yakima_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$invertebrates[which((yakima_weather$DATE >= as.Date('1990-01-01')) & (yakima_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$invertebrates[which((yakima_weather$DATE >= as.Date('1995-01-01')) & (yakima_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$invertebrates[which((yakima_weather$DATE >= as.Date('2000-01-01')) & (yakima_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$invertebrates[which((yakima_weather$DATE >= as.Date('2005-01-01')) & (yakima_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$invertebrates[which((yakima_weather$DATE >= as.Date('2010-01-01')) & (yakima_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$invertebrates[which((yakima_weather$DATE >= as.Date('2015-01-01')) & (yakima_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_amphibians = c(
-        mean(yakima_weather$amphibians[which(yakima_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(yakima_weather$amphibians[which((yakima_weather$DATE >= as.Date('1980-01-01')) & (yakima_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$amphibians[which((yakima_weather$DATE >= as.Date('1985-01-01')) & (yakima_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$amphibians[which((yakima_weather$DATE >= as.Date('1990-01-01')) & (yakima_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$amphibians[which((yakima_weather$DATE >= as.Date('1995-01-01')) & (yakima_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$amphibians[which((yakima_weather$DATE >= as.Date('2000-01-01')) & (yakima_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$amphibians[which((yakima_weather$DATE >= as.Date('2005-01-01')) & (yakima_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$amphibians[which((yakima_weather$DATE >= as.Date('2010-01-01')) & (yakima_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$amphibians[which((yakima_weather$DATE >= as.Date('2015-01-01')) & (yakima_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_plants = c(
-        mean(yakima_weather$plants[which(yakima_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(yakima_weather$plants[which((yakima_weather$DATE >= as.Date('1980-01-01')) & (yakima_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$plants[which((yakima_weather$DATE >= as.Date('1985-01-01')) & (yakima_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$plants[which((yakima_weather$DATE >= as.Date('1990-01-01')) & (yakima_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$plants[which((yakima_weather$DATE >= as.Date('1995-01-01')) & (yakima_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$plants[which((yakima_weather$DATE >= as.Date('2000-01-01')) & (yakima_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$plants[which((yakima_weather$DATE >= as.Date('2005-01-01')) & (yakima_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$plants[which((yakima_weather$DATE >= as.Date('2010-01-01')) & (yakima_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$plants[which((yakima_weather$DATE >= as.Date('2015-01-01')) & (yakima_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_average = c(
-        mean(yakima_weather$average[which(yakima_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(yakima_weather$average[which((yakima_weather$DATE >= as.Date('1980-01-01')) & (yakima_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$average[which((yakima_weather$DATE >= as.Date('1985-01-01')) & (yakima_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$average[which((yakima_weather$DATE >= as.Date('1990-01-01')) & (yakima_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$average[which((yakima_weather$DATE >= as.Date('1995-01-01')) & (yakima_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$average[which((yakima_weather$DATE >= as.Date('2000-01-01')) & (yakima_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$average[which((yakima_weather$DATE >= as.Date('2005-01-01')) & (yakima_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$average[which((yakima_weather$DATE >= as.Date('2010-01-01')) & (yakima_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(yakima_weather$average[which((yakima_weather$DATE >= as.Date('2015-01-01')) & (yakima_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE))
-)
-
-mexico_climate <- data.frame(
-    start_date = c(
-        as.Date('1961-01-01'), 
-        as.Date('1980-01-01'), 
-        as.Date('1985-01-01'), 
-        as.Date('1990-01-01'), 
-        as.Date('1995-01-01'), 
-        as.Date('2000-01-01'), 
-        as.Date('2005-01-01'), 
-        as.Date('2010-01-01'), 
-        as.Date('2015-01-01')),
-    end_date = c(
-        as.Date('1990-01-01'), 
-        as.Date('1985-01-01'), 
-        as.Date('1990-01-01'), 
-        as.Date('1995-01-01'), 
-        as.Date('2000-01-01'), 
-        as.Date('2005-01-01'), 
-        as.Date('2010-01-01'), 
-        as.Date('2015-01-01'), 
-        as.Date('2020-01-01')),
-    mean_tavg = c(
-        mean(mexico_weather$TAVG.K[which(mexico_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(mexico_weather$TAVG.K[which((mexico_weather$DATE >= as.Date('1980-01-01')) & (mexico_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$TAVG.K[which((mexico_weather$DATE >= as.Date('1985-01-01')) & (mexico_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$TAVG.K[which((mexico_weather$DATE >= as.Date('1990-01-01')) & (mexico_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$TAVG.K[which((mexico_weather$DATE >= as.Date('1995-01-01')) & (mexico_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$TAVG.K[which((mexico_weather$DATE >= as.Date('2000-01-01')) & (mexico_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$TAVG.K[which((mexico_weather$DATE >= as.Date('2005-01-01')) & (mexico_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$TAVG.K[which((mexico_weather$DATE >= as.Date('2010-01-01')) & (mexico_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$TAVG.K[which((mexico_weather$DATE >= as.Date('2015-01-01')) & (mexico_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_reptiles = c(
-        mean(mexico_weather$reptiles[which(mexico_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(mexico_weather$reptiles[which((mexico_weather$DATE >= as.Date('1980-01-01')) & (mexico_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$reptiles[which((mexico_weather$DATE >= as.Date('1985-01-01')) & (mexico_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$reptiles[which((mexico_weather$DATE >= as.Date('1990-01-01')) & (mexico_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$reptiles[which((mexico_weather$DATE >= as.Date('1995-01-01')) & (mexico_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$reptiles[which((mexico_weather$DATE >= as.Date('2000-01-01')) & (mexico_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$reptiles[which((mexico_weather$DATE >= as.Date('2005-01-01')) & (mexico_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$reptiles[which((mexico_weather$DATE >= as.Date('2010-01-01')) & (mexico_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$reptiles[which((mexico_weather$DATE >= as.Date('2015-01-01')) & (mexico_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_unicells = c(
-        mean(mexico_weather$unicells[which(mexico_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(mexico_weather$unicells[which((mexico_weather$DATE >= as.Date('1980-01-01')) & (mexico_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$unicells[which((mexico_weather$DATE >= as.Date('1985-01-01')) & (mexico_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$unicells[which((mexico_weather$DATE >= as.Date('1990-01-01')) & (mexico_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$unicells[which((mexico_weather$DATE >= as.Date('1995-01-01')) & (mexico_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$unicells[which((mexico_weather$DATE >= as.Date('2000-01-01')) & (mexico_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$unicells[which((mexico_weather$DATE >= as.Date('2005-01-01')) & (mexico_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$unicells[which((mexico_weather$DATE >= as.Date('2010-01-01')) & (mexico_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$unicells[which((mexico_weather$DATE >= as.Date('2015-01-01')) & (mexico_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_invertebrates = c(
-        mean(mexico_weather$invertebrates[which(mexico_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(mexico_weather$invertebrates[which((mexico_weather$DATE >= as.Date('1980-01-01')) & (mexico_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$invertebrates[which((mexico_weather$DATE >= as.Date('1985-01-01')) & (mexico_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$invertebrates[which((mexico_weather$DATE >= as.Date('1990-01-01')) & (mexico_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$invertebrates[which((mexico_weather$DATE >= as.Date('1995-01-01')) & (mexico_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$invertebrates[which((mexico_weather$DATE >= as.Date('2000-01-01')) & (mexico_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$invertebrates[which((mexico_weather$DATE >= as.Date('2005-01-01')) & (mexico_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$invertebrates[which((mexico_weather$DATE >= as.Date('2010-01-01')) & (mexico_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$invertebrates[which((mexico_weather$DATE >= as.Date('2015-01-01')) & (mexico_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_amphibians = c(
-        mean(mexico_weather$amphibians[which(mexico_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(mexico_weather$amphibians[which((mexico_weather$DATE >= as.Date('1980-01-01')) & (mexico_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$amphibians[which((mexico_weather$DATE >= as.Date('1985-01-01')) & (mexico_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$amphibians[which((mexico_weather$DATE >= as.Date('1990-01-01')) & (mexico_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$amphibians[which((mexico_weather$DATE >= as.Date('1995-01-01')) & (mexico_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$amphibians[which((mexico_weather$DATE >= as.Date('2000-01-01')) & (mexico_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$amphibians[which((mexico_weather$DATE >= as.Date('2005-01-01')) & (mexico_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$amphibians[which((mexico_weather$DATE >= as.Date('2010-01-01')) & (mexico_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$amphibians[which((mexico_weather$DATE >= as.Date('2015-01-01')) & (mexico_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_plants = c(
-        mean(mexico_weather$plants[which(mexico_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(mexico_weather$plants[which((mexico_weather$DATE >= as.Date('1980-01-01')) & (mexico_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$plants[which((mexico_weather$DATE >= as.Date('1985-01-01')) & (mexico_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$plants[which((mexico_weather$DATE >= as.Date('1990-01-01')) & (mexico_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$plants[which((mexico_weather$DATE >= as.Date('1995-01-01')) & (mexico_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$plants[which((mexico_weather$DATE >= as.Date('2000-01-01')) & (mexico_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$plants[which((mexico_weather$DATE >= as.Date('2005-01-01')) & (mexico_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$plants[which((mexico_weather$DATE >= as.Date('2010-01-01')) & (mexico_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$plants[which((mexico_weather$DATE >= as.Date('2015-01-01')) & (mexico_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)),
-    mean_average = c(
-        mean(mexico_weather$average[which(mexico_weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
-        mean(mexico_weather$average[which((mexico_weather$DATE >= as.Date('1980-01-01')) & (mexico_weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$average[which((mexico_weather$DATE >= as.Date('1985-01-01')) & (mexico_weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$average[which((mexico_weather$DATE >= as.Date('1990-01-01')) & (mexico_weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$average[which((mexico_weather$DATE >= as.Date('1995-01-01')) & (mexico_weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$average[which((mexico_weather$DATE >= as.Date('2000-01-01')) & (mexico_weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$average[which((mexico_weather$DATE >= as.Date('2005-01-01')) & (mexico_weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$average[which((mexico_weather$DATE >= as.Date('2010-01-01')) & (mexico_weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
-        mean(mexico_weather$average[which((mexico_weather$DATE >= as.Date('2015-01-01')) & (mexico_weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE))
-)
-
-mexico_climate <- mexico_climate %>% 
-    mutate(median_date = start_date + (as.numeric(difftime(end_date, start_date)) / 2))
-brazil_climate <- brazil_climate %>% 
-    mutate(median_date = start_date + (as.numeric(difftime(end_date, start_date)) / 2))
-yakima_climate <- yakima_climate %>% 
-    mutate(median_date = start_date + (as.numeric(difftime(end_date, start_date)) / 2))
-
-
-
-plot_taxon <- function(taxon = "average"){
+get_taxon_averages <- function(taxon, taxon_metabolics){
+    weather <- taxon_metabolics
     column_id <- str_c("mean_", taxon)
+    climate <- data.frame(
+        start_date = c(
+            as.Date('1961-01-01'), 
+            as.Date('1980-01-01'), 
+            as.Date('1985-01-01'), 
+            as.Date('1990-01-01'), 
+            as.Date('1995-01-01'), 
+            as.Date('2000-01-01'), 
+            as.Date('2005-01-01'), 
+            as.Date('2010-01-01'), 
+            as.Date('2015-01-01')),
+        end_date = c(
+            as.Date('1990-01-01'), 
+            as.Date('1985-01-01'), 
+            as.Date('1990-01-01'), 
+            as.Date('1995-01-01'), 
+            as.Date('2000-01-01'), 
+            as.Date('2005-01-01'), 
+            as.Date('2010-01-01'), 
+            as.Date('2015-01-01'), 
+            as.Date('2020-01-01')),
+        mean_tavg = c(
+            mean(weather$TAVG.K[which(weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
+            mean(weather$TAVG.K[which((weather$DATE >= as.Date('1980-01-01')) & (weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
+            mean(weather$TAVG.K[which((weather$DATE >= as.Date('1985-01-01')) & (weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
+            mean(weather$TAVG.K[which((weather$DATE >= as.Date('1990-01-01')) & (weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
+            mean(weather$TAVG.K[which((weather$DATE >= as.Date('1995-01-01')) & (weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
+            mean(weather$TAVG.K[which((weather$DATE >= as.Date('2000-01-01')) & (weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
+            mean(weather$TAVG.K[which((weather$DATE >= as.Date('2005-01-01')) & (weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
+            mean(weather$TAVG.K[which((weather$DATE >= as.Date('2010-01-01')) & (weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
+            mean(weather$TAVG.K[which((weather$DATE >= as.Date('2015-01-01')) & (weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE)))
+    climate[column_id] <- c(
+        mean(weather[[taxon]][which(weather$DATE < as.Date('1990-01-01'))], na.rm = TRUE),
+        mean(weather[[taxon]][which((weather$DATE >= as.Date('1980-01-01')) & (weather$DATE < as.Date('1985-01-01')))], na.rm = TRUE),
+        mean(weather[[taxon]][which((weather$DATE >= as.Date('1985-01-01')) & (weather$DATE < as.Date('1990-01-01')))], na.rm = TRUE),
+        mean(weather[[taxon]][which((weather$DATE >= as.Date('1990-01-01')) & (weather$DATE < as.Date('1995-01-01')))], na.rm = TRUE),
+        mean(weather[[taxon]][which((weather$DATE >= as.Date('1995-01-01')) & (weather$DATE < as.Date('2000-01-01')))], na.rm = TRUE),
+        mean(weather[[taxon]][which((weather$DATE >= as.Date('2000-01-01')) & (weather$DATE < as.Date('2005-01-01')))], na.rm = TRUE),
+        mean(weather[[taxon]][which((weather$DATE >= as.Date('2005-01-01')) & (weather$DATE < as.Date('2010-01-01')))], na.rm = TRUE),
+        mean(weather[[taxon]][which((weather$DATE >= as.Date('2010-01-01')) & (weather$DATE < as.Date('2015-01-01')))], na.rm = TRUE),
+        mean(weather[[taxon]][which((weather$DATE >= as.Date('2015-01-01')) & (weather$DATE < as.Date('2020-01-01')))], na.rm = TRUE))
+    
+    return(climate)
+}
+
+
+plot_taxon <- function(taxon = "average", mass){
+    if(is.null(taxon)){taxon <- "average"}
+    column_id <- str_c("mean_", taxon)
+    mass <- as.integer(mass)
+    available_mass <- ((metabolics[which(metabolics$taxon == taxon), "mass_min"] + metabolics[which(metabolics$taxon == taxon), "mass_max"])/2)
+    available_mass <- as.integer(available_mass)
+    if(mass == available_mass){
+        print("Using defaults to save time!")
+        mexico_climate <- read_rds(str_c("./dat/climate-analysis/", "tlaxcala_mexico", "_means.csv")) 
+        mexico_weather <- read_rds(str_c("./dat/historical-weather/", "tlaxcala_mexico", ".csv")) 
+        
+        brazil_climate <- read_rds(str_c("./dat/climate-analysis/", "campinas_brazil", "_means.csv")) 
+        brazil_weather <- read_rds(str_c("./dat/historical-weather/", "campinas_brazil", ".csv")) 
+        
+        yakima_climate <- read_rds(str_c("./dat/climate-analysis/", "yakima_washington", "_means.csv")) 
+        yakima_weather <- read_rds(str_c("./dat/historical-weather/", "yakima_washington", ".csv")) 
+        
+        columbia_climate <- read_rds(str_c("./dat/climate-analysis/", "cali_alfonso_bonill_columbia", "_means.csv")) 
+        columbia_weather <- read_rds(str_c("./dat/historical-weather/", "cali_alfonso_bonill_columbia", ".csv")) 
+        
+        greenland_climate <- read_rds(str_c("./dat/climate-analysis/", "danmarkshavn_greenland", "_means.csv")) 
+        greenland_weather <- read_rds(str_c("./dat/historical-weather/", "danmarkshavn_greenland", ".csv")) 
+        
+    }else{
+        print("Calculating metabolic information")
+        mexico_weather <- get_taxon_metabolics(taxon = taxon, mass = mass, weather_path = str_c("./dat/", "tlaxcala_mexico", ".csv")) 
+        mexico_climate <- get_taxon_averages(taxon = taxon, taxon_metabolics = mexico_weather)
+        
+        brazil_weather <- get_taxon_metabolics(taxon = taxon, mass = mass, weather_path = str_c("./dat/", "campinas_brazil", ".csv")) 
+        brazil_climate <- get_taxon_averages(taxon = taxon, taxon_metabolics = brazil_weather)
+        
+        yakima_weather <- get_taxon_metabolics(taxon = taxon, mass = mass, weather_path = str_c("./dat/", "yakima_washington", ".csv")) 
+        yakima_climate <- get_taxon_averages(taxon = taxon, taxon_metabolics = yakima_weather)
+        
+        columbia_weather <- get_taxon_metabolics(taxon = taxon, mass = mass, weather_path = str_c("./dat/", "cali_alfonso_bonill_columbia", ".csv")) 
+        columbia_climate <- get_taxon_averages(taxon = taxon, taxon_metabolics = columbia_weather)
+        
+        greenland_weather <- get_taxon_metabolics(taxon = taxon, mass = mass, weather_path = str_c("./dat/", "danmarkshavn_greenland", ".csv")) 
+        greenland_climate <- get_taxon_averages(taxon = taxon, taxon_metabolics = greenland_weather)}
+    
     #climate (air temperature) plot
     #FIX START DATES (Point locations)
     climate_plot <- plot_ly(brazil_climate[2:length(brazil_climate[[1]]),], x = ~end_date) %>%
         #add_lines(y = ~TAVG.K) %>% 
-        add_trace(data = yakima_climate[2:length(yakima_climate[[1]]),], y = ~mean_tavg, mode = 'lines+markers', name = "Washington, USA", color = 'green') %>%
-        add_trace(data = brazil_climate[2:length(brazil_climate[[1]]),], y = ~mean_tavg, mode = 'lines+markers', name = "Campinas, BR", color = 'red') %>% 
-        add_trace(data = mexico_climate[2:length(mexico_climate[[1]]),], y = ~mean_tavg, mode = 'lines+markers', name = "Tlaxcala, MX", color = 'blue') %>% 
+        add_trace(type = "scatter", data = yakima_climate[2:length(yakima_climate[[1]]),], y = ~mean_tavg, mode = 'lines+markers', name = "Washington, USA", color = 'green') %>%
+        add_trace(type = "scatter", data = brazil_climate[2:length(brazil_climate[[1]]),], y = ~mean_tavg, mode = 'lines+markers', name = "Campinas, BR", color = 'red') %>% 
+        add_trace(type = "scatter", data = mexico_climate[2:length(mexico_climate[[1]]),], y = ~mean_tavg, mode = 'lines+markers', name = "Tlaxcala, MX", color = 'blue') %>% 
+        add_trace(type = "scatter", data = columbia_climate[2:length(columbia_climate[[1]]),], y = ~mean_tavg, mode = 'lines+markers', name = "C. Alf. Bl., CO", color = 'pink') %>% 
+        add_trace(type = "scatter", data = greenland_climate[2:length(greenland_climate[[1]]),], y = ~mean_tavg, mode = 'lines+markers', name = "Danmarkshavn, GL", color = 'violet') %>% 
+        add_segments(x = greenland_climate[2, "start_date"], 
+                     xend = greenland_climate[9, "end_date"], 
+                     y = greenland_climate[1, "mean_tavg"], 
+                     yend = greenland_climate[1, "mean_tavg"], 
+                     name = "Reference Period",
+                     line = list(dash = "dot",
+                                 color = "grey"),
+                     showlegend = FALSE) %>% 
         add_segments(x = mexico_climate[2, "start_date"], 
                      xend = mexico_climate[9, "end_date"], 
                      y = mexico_climate[1, "mean_tavg"], 
                      yend = mexico_climate[1, "mean_tavg"], 
                      name = "Reference Period",
                      line = list(dash = "dot",
-                                 color = "green"),
+                                 color = "grey"),
                      showlegend = FALSE) %>% 
         add_segments(x = brazil_climate[2, "start_date"], 
                      xend = brazil_climate[9, "end_date"], 
@@ -592,7 +313,7 @@ plot_taxon <- function(taxon = "average"){
                      yend = brazil_climate[1, "mean_tavg"], 
                      name = "Reference Period",
                      line = list(dash = "dot",
-                                 color = "blue"),
+                                 color = "grey"),
                      showlegend = FALSE) %>% 
         add_segments(x = yakima_climate[2, "start_date"], 
                      xend = yakima_climate[9, "end_date"], 
@@ -600,10 +321,19 @@ plot_taxon <- function(taxon = "average"){
                      yend = yakima_climate[1, "mean_tavg"], 
                      name = "Reference Period",
                      line = list(dash = "dot",
-                                 color = "red")) %>% 
+                                 color = "grey")) %>% 
+        add_segments(x = columbia_climate[2, "start_date"], 
+                     xend = columbia_climate[9, "end_date"], 
+                     y = columbia_climate[1, "mean_tavg"], 
+                     yend = columbia_climate[1, "mean_tavg"], 
+                     name = "Reference Period",
+                     line = list(dash = "dot",
+                                 color = "grey"),
+                     showlegend = FALSE) %>% 
         layout(
-            title = str_c("Climate means at 5 year intervals after reference period"),
+            title = str_c("Climate means at 5 year intervals"),
             xaxis = list(
+                showspikes = TRUE,
                 title = "Date",
                 rangeselector = list(
                     buttons = list(
@@ -624,21 +354,31 @@ plot_taxon <- function(taxon = "average"){
                             stepmode = "backward"))),
                 
                 rangeslider = list(type = "date")),
-            yaxis = list(title = "Air Temperature \n(\u00B0K)"))
+            yaxis = list(title = "Air Temp", ticksuffix = "\u00B0K"))
     
     
     metabolism_plot <- plot_ly(brazil_climate[2:length(brazil_climate[[1]]),], x = ~end_date) %>%
         #add_lines(y = ~TAVG.K) %>% 
-        add_trace(data = yakima_climate[2:length(yakima_climate[[1]]),], y = yakima_climate[2:length(yakima_climate[[1]]),column_id], mode = 'lines+markers', name = "Washington, USA", color = 'green', showlegend = FALSE) %>%
-        add_trace(data = brazil_climate[2:length(brazil_climate[[1]]),], y = brazil_climate[2:length(brazil_climate[[1]]),column_id], mode = 'lines+markers', name = "Campinas, BR", color = 'red', showlegend = FALSE) %>% 
-        add_trace(data = mexico_climate[2:length(mexico_climate[[1]]),], y = mexico_climate[2:length(mexico_climate[[1]]),column_id], mode = 'lines+markers', name = "Tlaxcala, MX", color = 'blue', showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = yakima_climate[2:length(yakima_climate[[1]]),], y = yakima_climate[2:length(yakima_climate[[1]]),column_id], mode = 'lines+markers', name = "Washington, USA", color = 'green', showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = brazil_climate[2:length(brazil_climate[[1]]),], y = brazil_climate[2:length(brazil_climate[[1]]),column_id], mode = 'lines+markers', name = "Campinas, BR", color = 'red', showlegend = FALSE) %>% 
+        add_trace(type = "scatter", data = mexico_climate[2:length(mexico_climate[[1]]),], y = mexico_climate[2:length(mexico_climate[[1]]),column_id], mode = 'lines+markers', name = "Tlaxcala, MX", color = 'blue', showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = columbia_climate[2:length(columbia_climate[[1]]),], y = columbia_climate[2:length(columbia_climate[[1]]),column_id], mode = 'lines+markers', name = "C. Alf. Bl., CO", color = 'pink', showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = greenland_climate[2:length(greenland_climate[[1]]),], y = greenland_climate[2:length(greenland_climate[[1]]),column_id], mode = 'lines+markers', name = "Danmarkshavn, GL", color = 'violet', showlegend = FALSE) %>%
+        add_segments(x = greenland_climate[2, "start_date"], 
+                     xend = greenland_climate[9, "end_date"], 
+                     y = greenland_climate[1, column_id], 
+                     yend = greenland_climate[1, column_id], 
+                     name = "Reference Period",
+                     line = list(dash = "dot",
+                                 color = "grey"),
+                     showlegend = FALSE) %>% 
         add_segments(x = mexico_climate[2, "start_date"], 
                      xend = mexico_climate[9, "end_date"], 
                      y = mexico_climate[1, column_id], 
                      yend = mexico_climate[1, column_id], 
                      name = "Reference Period",
                      line = list(dash = "dot",
-                                 color = "green"),
+                                 color = "grey"),
                      showlegend = FALSE) %>% 
         add_segments(x = brazil_climate[2, "start_date"], 
                      xend = brazil_climate[9, "end_date"], 
@@ -646,7 +386,7 @@ plot_taxon <- function(taxon = "average"){
                      yend = brazil_climate[1, column_id], 
                      name = "Reference Period",
                      line = list(dash = "dot",
-                                 color = "blue"),
+                                 color = "grey"),
                      showlegend = FALSE) %>% 
         add_segments(x = yakima_climate[2, "start_date"], 
                      xend = yakima_climate[9, "end_date"], 
@@ -654,12 +394,21 @@ plot_taxon <- function(taxon = "average"){
                      yend = yakima_climate[1, column_id], 
                      name = "Reference Period",
                      line = list(dash = "dot",
-                                 color = "red"),
+                                 color = "grey"),
+                     showlegend = FALSE) %>% 
+        add_segments(x = columbia_climate[2, "start_date"], 
+                     xend = columbia_climate[9, "end_date"], 
+                     y = columbia_climate[1, column_id], 
+                     yend = columbia_climate[1, column_id], 
+                     name = "Reference Period",
+                     line = list(dash = "dot",
+                                 color = "grey"),
                      showlegend = FALSE) %>% 
         layout(
-            title = str_c("Metabolism and temperature means at 5 year intervals after reference period"),
+            title = str_c("Metabolism and temperature means at 5 year intervals"),
             xaxis = list(
                 title = "Date",
+                showspikes = TRUE,
                 rangeselector = list(
                     buttons = list(
                         list(
@@ -679,43 +428,185 @@ plot_taxon <- function(taxon = "average"){
                             stepmode = "backward"))),
                 
                 rangeslider = list(type = "date")),
-            yaxis = list(title = "Metabolic Rate \n(mWg<sup>-3/4</sup>)"))
+            yaxis = list(title = "Metabolic \nRate \n(mWg<sup>-3/4</sup>)"))
     
-    master_plots <- subplot(climate_plot, metabolism_plot, shareX = TRUE, nrows = 2, titleY = TRUE) 
+    
+    
+    metabolism_percent_plot <- plot_ly(brazil_climate[2:length(brazil_climate[[1]]),], x = ~end_date) %>%
+        #add_lines(y = ~TAVG.K) %>%
+        add_trace(type = "scatter", data = yakima_climate[2:length(yakima_climate[[1]]),], y = ((yakima_climate[2:length(yakima_climate[[1]]),column_id] - yakima_climate[1, column_id]) / yakima_climate[1, column_id])*100, mode = 'lines+markers', name = "Washington, USA", color = 'green', showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = brazil_climate[2:length(brazil_climate[[1]]),], y = ((brazil_climate[2:length(brazil_climate[[1]]),column_id] - brazil_climate[1, column_id]) / brazil_climate[1, column_id])*100, mode = 'lines+markers', name = "Campinas, BR", color = 'red', showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = mexico_climate[2:length(mexico_climate[[1]]),], y = ((mexico_climate[2:length(mexico_climate[[1]]),column_id] - mexico_climate[1, column_id]) / mexico_climate[1, column_id])*100, mode = 'lines+markers', name = "Tlaxcala, MX", color = 'blue', showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = columbia_climate[2:length(columbia_climate[[1]]),], y = ((columbia_climate[2:length(columbia_climate[[1]]),column_id] - columbia_climate[1, column_id]) / columbia_climate[1, column_id])*100, mode = 'lines+markers', name = "C. Alf. Bl., CO", color = 'pink', showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = greenland_climate[2:length(greenland_climate[[1]]),], y = ((greenland_climate[2:length(greenland_climate[[1]]),column_id] - greenland_climate[1, column_id]) / greenland_climate[1, column_id])*100, mode = 'lines+markers', name = "Danmarkshavn, GL", color = 'violet', showlegend = FALSE) %>%
+        add_segments(x = greenland_climate[2, "start_date"], 
+                     xend = greenland_climate[9, "end_date"], 
+                     y = greenland_climate[1, column_id], 
+                     yend = greenland_climate[1, column_id], 
+                     name = "Reference Period",
+                     line = list(dash = "dot",
+                                 color = "grey"),
+                     showlegend = FALSE) %>% 
+        add_segments(x = mexico_climate[2, "start_date"], 
+                     xend = mexico_climate[9, "end_date"], 
+                     y = mexico_climate[1, column_id], 
+                     yend = mexico_climate[1, column_id], 
+                     name = "Reference Period",
+                     line = list(dash = "dot",
+                                 color = "grey"),
+                     showlegend = FALSE) %>% 
+        add_segments(x = brazil_climate[2, "start_date"], 
+                     xend = brazil_climate[9, "end_date"], 
+                     y = brazil_climate[1, column_id], 
+                     yend = brazil_climate[1, column_id], 
+                     name = "Reference Period",
+                     line = list(dash = "dot",
+                                 color = "grey"),
+                     showlegend = FALSE) %>% 
+        add_segments(x = yakima_climate[2, "start_date"], 
+                     xend = yakima_climate[9, "end_date"], 
+                     y = yakima_climate[1, column_id], 
+                     yend = yakima_climate[1, column_id], 
+                     name = "Reference Period",
+                     line = list(dash = "dot",
+                                 color = "grey"),
+                     showlegend = FALSE) %>% 
+        add_segments(x = columbia_climate[2, "start_date"], 
+                     xend = columbia_climate[9, "end_date"], 
+                     y = columbia_climate[1, column_id], 
+                     yend = columbia_climate[1, column_id], 
+                     name = "Reference Period",
+                     line = list(dash = "dot",
+                                 color = "grey"),
+                     showlegend = FALSE) %>% 
+        layout(
+            title = str_c("Metabolism and temperature means at 5 year intervals"),
+            xaxis = list(
+                title = "Date",
+                showspikes = TRUE,
+                rangeselector = list(
+                    buttons = list(
+                        list(
+                            count = 1,
+                            label = "1 y",
+                            step = "year",
+                            stepmode = "backward"),
+                        list(
+                            count = 6,
+                            label = "6 y",
+                            step = "year",
+                            stepmode = "backward"),
+                        list(
+                            count = 20,
+                            label = "20 y",
+                            step = "year",
+                            stepmode = "backward"))),
+                
+                rangeslider = list(type = "date")),
+            yaxis = list(title = "Metabolic \nRate Change", ticksuffix = "%"))
+    
+    master_plots <- subplot(climate_plot, metabolism_plot, metabolism_percent_plot, shareX = TRUE, nrows = 3, titleY = TRUE) 
     return(master_plots)}
 
 # Define UI for application 
 ui <- fluidPage(
-
     # Application title
     titlePanel("Climate Warming and Ectotherm Metabolism"),
-
+    
     # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
+    verticalLayout(
+        leafletOutput("climate_map") %>% withSpinner(color = "#228B22"),
+        hr(),
+        dropdownButton(
+            tags$h3("Plot Settings"),
+            circle = TRUE, status = "info", icon = icon("gear"), width = "300px",
+            tooltip = tooltipOptions(title = "Click to see plot settings!"),
+            #bg_color = "#c4d5a7", width = 2L,
+            #bg_color = "#dec4de", color = "#228B22",
             selectInput("taxon",
-                        "Select a taxonomic group:",
+                        "Taxonomic group:",
                         choices = list("Unicells" = "unicells",
                                        "Plants" = "plants",
                                        "Invertebrates" = "invertebrates",
                                        "Amphibians" = "amphibians",
                                        "Reptiles" = "reptiles",
                                        "Average" = "average"),
-                        selected = "average")
-        ),
-
+                        selected = "average"),
+            sliderInput(
+                inputId = "mass",
+                label = "Taxon mass",
+                value = (metabolics$mass_max[6] + metabolics$mass_min[6])/2,
+                min = metabolics$mass_min[6],
+                max = metabolics$mass_max[6],
+                post = "g",
+                animate = FALSE#, 
+                # lineCap = "round",
+                # fgColor = "#428BCA",
+                # inputColor = "#428BCA",
+                # width = "150px",
+                # immediate = FALSE
+            )),
         # Show a plot of the generated distribution
-        mainPanel(
-           plotlyOutput("metaplot")
-        )
-    )
-)
+        
+        plotlyOutput("metaplot", height = "100%") %>% withSpinner(color = "#228B22")
+    ))
 
 # Define server logic required to draw a histogram
-server <- function(input, output) {
+server <- function(input, output, session) {
     #taxon <- reactive({input$taxon})
-    #taxon <- "average"
-    output$metaplot <- renderPlotly(plot_taxon(input$taxon))
+    climate_map <- leaflet() %>%
+        addProviderTiles(providers$CartoDB.Positron, options = providerTileOptions(noWrap = FALSE)) %>% 
+        flyTo(0,0,1) %>% 
+        addRectangles(180, 66.5, -180, 90, stroke = FALSE, color = "blue", fillOpacity = 0.4) %>% 
+        addRectangles(180, -66.5, -180, -90, stroke = FALSE, color = "blue", fillOpacity = 0.4) %>% 
+        addRectangles(180, 23.5, -180, 35, stroke = FALSE, color = "orange", fillOpacity = 0.4) %>% 
+        addRectangles(180, -23.5, -180, -35, stroke = FALSE, color = "orange", fillOpacity = 0.4) %>% 
+        addRectangles(180, 35, -180, 66.5, stroke = FALSE, color = "green", fillOpacity = 0.4) %>% 
+        addRectangles(180, -35, -180, -66.5, stroke = FALSE, color = "green", fillOpacity = 0.4) %>% 
+        addRectangles(180, -23.5, -180, 23.5, stroke = FALSE, color = "red", fillOpacity = 0.4) %>% 
+        addCircleMarkers(lat = 46.6021, lng = -120.5059, color = "black", radius = 7, 
+                         label = "Yakima, Washington, USA") %>% 
+        addCircleMarkers(lat = -22.9329, lng = -47.0738, color = "black", radius = 7,
+                         label = "Campinas, Brazil") %>% 
+        addCircleMarkers(lat = 19.3182, lng = -98.2375, color = "black", radius = 7,
+                         label = "Tlaxcala, Mexico") %>% 
+        addCircleMarkers(lat = 3.5411, lng = -76.3846, color = "black", radius = 7,
+                         label = "Cali Alfonso Bonill, Columbia") %>% 
+        addCircleMarkers(lat = 76.7667, lng = -18.6667, color = "black", radius = 7,
+                         label = "Danmarkshavn, Greenland") %>% 
+        addLegend(position = "bottomright", 
+                  colors = colors, 
+                  labels = zones,
+                  title = "Climate Zones") 
+    
+    output$climate_map <- renderLeaflet(climate_map) 
+    
+    observeEvent(input$taxon, {
+        if(!is.null(input$taxon)){
+            metabolic_inf <- metabolics[which(metabolics$taxon == input$taxon),]
+            updateSliderInput(
+                session = session,
+                inputId = "mass",
+                value = (metabolic_inf$mass_max + metabolic_inf$mass_min)/2,
+                min = metabolic_inf$mass_min,
+                max = metabolic_inf$mass_max,
+                step = ceiling({(metabolic_inf$mass_max - metabolic_inf$mass_min)/6}),
+            )
+            output$metaplot <- renderPlotly(plot_taxon(taxon = input$taxon, mass = (metabolic_inf$mass_max + metabolic_inf$mass_min)/2))}
+    })
+    
+    observeEvent(input$mass, {
+        output$metaplot <- renderPlotly(plot_taxon(taxon = input$taxon, mass = input$mass))
+    })
+    
+    colors = c("red", "orange", "green", "blue")
+    zones = c("Tropical zone", "Subtropical zone", "Temperate zone", "Polar/subpolar zone")
+    # pal <- colorBin(colors, 
+    #                 zones, 
+    #                 bins = zones,
+    #                 na.color = "transparent")
+    #CartoDB.DarkMatter
+    
 }
 
 # Run the application 
