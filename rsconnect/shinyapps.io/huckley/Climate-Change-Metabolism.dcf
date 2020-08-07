@@ -5,8 +5,8 @@ account: huckley
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2642134
-bundleId: 3484451
+bundleId: 3488505
 url: https://huckley.shinyapps.io/Climate-Change-Metabolism/
-when: 1596754257.72192
+when: 1596830875.41813
 asMultiple: FALSE
 asStatic: FALSE

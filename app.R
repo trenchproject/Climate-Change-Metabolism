@@ -4,9 +4,9 @@ library(rnoaa)
 library(plotly)
 library(lubridate)
 library(zoo)
-library(shinyBS)
 library(shinyWidgets)
 library(shinycssloaders)
+library(shinytoastr)
 # library(mapdeck)
 # library(sp)
 library(leaflet)
@@ -249,7 +249,7 @@ plot_taxon <- function(taxon = "average", mass){
     available_mass <- ((metabolics[which(metabolics$taxon == taxon), "mass_min"] + metabolics[which(metabolics$taxon == taxon), "mass_max"])/2)
     available_mass <- as.integer(available_mass)
     if(mass == available_mass){
-        print("Using defaults to save time!")
+        toastr_info("Rendering default plots")
         mexico_climate <- read_rds(str_c("./dat/climate-analysis/", "tlaxcala_mexico", "_means.csv")) 
         mexico_weather <- read_rds(str_c("./dat/historical-weather/", "tlaxcala_mexico", ".csv")) 
         
@@ -266,7 +266,7 @@ plot_taxon <- function(taxon = "average", mass){
         greenland_weather <- read_rds(str_c("./dat/historical-weather/", "danmarkshavn_greenland", ".csv")) 
         
     }else{
-        print("Calculating metabolic information")
+        toastr_info("Calculating metabolic parameters")
         mexico_weather <- get_taxon_metabolics(taxon = taxon, mass = mass, weather_path = str_c("./dat/", "tlaxcala_mexico", ".csv")) 
         mexico_climate <- get_taxon_averages(taxon = taxon, taxon_metabolics = mexico_weather)
         
@@ -506,11 +506,13 @@ plot_taxon <- function(taxon = "average", mass){
             yaxis = list(title = "Metabolic \nRate Change", ticksuffix = "%"))
     
     master_plots <- subplot(climate_plot, metabolism_plot, metabolism_percent_plot, shareX = TRUE, nrows = 3, titleY = TRUE) 
+    toastr_success("Plots rendered")
     return(master_plots)}
 
 # Define UI for application 
 ui <- fluidPage(
     # Application title
+    useToastr(),
     titlePanel("Climate Warming and Ectotherm Metabolism"),
     
     # Sidebar with a slider input for number of bins 
@@ -554,6 +556,34 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
     #taxon <- reactive({input$taxon})
+    
+    observeEvent(input$taxon, {
+        if(!is.null(input$taxon)){
+            metabolic_inf <- metabolics[which(metabolics$taxon == input$taxon),]
+            updateSliderInput(
+                session = session,
+                inputId = "mass",
+                value = (metabolic_inf$mass_max + metabolic_inf$mass_min)/2,
+                min = metabolic_inf$mass_min,
+                max = metabolic_inf$mass_max,
+                step = ceiling({(metabolic_inf$mass_max - metabolic_inf$mass_min)/10}),
+            )
+            output$metaplot <- renderPlotly(plot_taxon(taxon = input$taxon, mass = (metabolic_inf$mass_max + metabolic_inf$mass_min)/2))}
+    })
+    
+    observeEvent(input$mass, {
+        metabolic_inf <- metabolics[which(metabolics$taxon == input$taxon),]
+        if(as.integer(input$mass) != as.integer((metabolic_inf$mass_max + metabolic_inf$mass_min)/2)){
+        output$metaplot <- renderPlotly(plot_taxon(taxon = input$taxon, mass = input$mass))}
+    })
+    
+    colors = c("red", "orange", "green", "blue")
+    zones = c("Tropical zone", "Subtropical zone", "Temperate zone", "Polar/subpolar zone")
+    # pal <- colorBin(colors, 
+    #                 zones, 
+    #                 bins = zones,
+    #                 na.color = "transparent")
+    #CartoDB.DarkMatter
     climate_map <- leaflet() %>%
         addProviderTiles(providers$CartoDB.Positron, options = providerTileOptions(noWrap = FALSE)) %>% 
         flyTo(0,0,1) %>% 
@@ -580,32 +610,6 @@ server <- function(input, output, session) {
                   title = "Climate Zones") 
     
     output$climate_map <- renderLeaflet(climate_map) 
-    
-    observeEvent(input$taxon, {
-        if(!is.null(input$taxon)){
-            metabolic_inf <- metabolics[which(metabolics$taxon == input$taxon),]
-            updateSliderInput(
-                session = session,
-                inputId = "mass",
-                value = (metabolic_inf$mass_max + metabolic_inf$mass_min)/2,
-                min = metabolic_inf$mass_min,
-                max = metabolic_inf$mass_max,
-                step = ceiling({(metabolic_inf$mass_max - metabolic_inf$mass_min)/6}),
-            )
-            output$metaplot <- renderPlotly(plot_taxon(taxon = input$taxon, mass = (metabolic_inf$mass_max + metabolic_inf$mass_min)/2))}
-    })
-    
-    observeEvent(input$mass, {
-        output$metaplot <- renderPlotly(plot_taxon(taxon = input$taxon, mass = input$mass))
-    })
-    
-    colors = c("red", "orange", "green", "blue")
-    zones = c("Tropical zone", "Subtropical zone", "Temperate zone", "Polar/subpolar zone")
-    # pal <- colorBin(colors, 
-    #                 zones, 
-    #                 bins = zones,
-    #                 na.color = "transparent")
-    #CartoDB.DarkMatter
     
 }
 
