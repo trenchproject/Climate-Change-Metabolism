@@ -517,8 +517,10 @@ ui <- fluidPage(
     
     # Sidebar with a slider input for number of bins 
     verticalLayout(
+        includeMarkdown("./intro1.md"),
         leafletOutput("climate_map") %>% withSpinner(color = "#228B22"),
-        hr(),
+        helpText("The selected weather stations' (black markers) positions span multiple climate zones and represent a large latitudinal range from the equator to the north pole."),
+        #hr(),
         dropdownButton(
             tags$h3("Plot Settings"),
             circle = TRUE, status = "info", icon = icon("gear"), width = "300px",
