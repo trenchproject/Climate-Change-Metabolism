@@ -1,1 +1,5 @@
 # Climate-Change-Metabolism
+
+This project aims to provide a web based visualization for a 2010 paper from Michael Dillon, George Wang, and Raymond Huey. Dillon et al. proposed that contrary to popular assumptions, the effects of climate change on organisms may be the greatest in the tropics and subtropics, despite the fact that changes in global temperature means are likely to be the most pronounced at higher latitudes. Here, we leverage the Leaflet and Plotly wrappers available in RShiny to provide interactive data visualizations comparing climate and metabolic trends across latitudes and time. 
+
+Daily weather data was sourced from the [Global Historical Climatology Network](https://www.ncdc.noaa.gov/ghcn-daily-description), using the National Oceanic and Atmospheric Administration's [online data portal](https://www.ncdc.noaa.gov/cdo-web/search). This weather data was used to calculate taxon specific metabolic information using specific, emperically derived metabolism constants available from [Dillon et al. 2010](http://faculty.washington.edu/hueyrb/new/DillonEA2010.pdf), to calculate metabolic rate. 
