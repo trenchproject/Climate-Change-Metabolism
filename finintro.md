@@ -47,7 +47,7 @@ Let’s explore what the steepening curve means for increasing rates of energy u
 
 You can read [this article](https://www.nature.com/scitable/knowledge/library/body-size-and-temperature-why-they-matter-15157011/) to learn more about how body size and temperature determine metabolic rate.
 
-**Does climate warming increase energy use more in tropical or temperate regions?**
+### Does climate warming increase energy use more in tropical or temperate regions?**
 
 A team at the University of Washington led by then graduate student Michael Dillon, who is now a professor at the University of Wyoming, set out to quantify how fast climate warming would increase rates of energy use in different regions of the earth. The researchers used nearly 500 million temperature readings from more than 3,000 stations around the world to chart temperature increases from 1961 through 2009, then examined the effect of those increases on metabolism. What they found surprised them. We’ll use a visualization to recreate their analysis. 
 
