@@ -6,13 +6,13 @@ This activity is adapted from the following research article: Dillon, M. E., Wan
 ### Introduction 
 **Latitudinal gradients in climate warming**
 
-Both observations of recent climate change and model projections of future climate change indicate faster warming toward the poles, particularly in the arctic. You can use [this mapping application made by NASA](https://data.giss.nasa.gov/gistemp/maps/index_v4.html) to explore global patterns of recent climate change. Choose to plot “anomalies”, which indicate differences in temperature between a selected period and a baseline period (the default baseline is 1951-1980). Use the example plot below or create your own plot to answer the following questions:
+Both observations of recent climate change and model projections of future climate change indicate faster warming toward the poles, particularly in the arctic. You can use [this mapping application made by NASA](https://data.giss.nasa.gov/gistemp/maps/index_v4.html) to explore global patterns of recent climate change. Choose to plot “anomalies”, which indicate differences in temperature between a selected period and a baseline period (the default baseline is 1951-1980). 
 
-**Q1.** Where has recent warming been the strongest? What else do you notice regarding spatial patterns of warming?
+<p>
+<img src="https://lh6.googleusercontent.com/hnYwq0F19xNh13yyGsGQv5hEBwrRAzjs3RU5uNQ8jpmR1RkrtjsxAxmwF4r1I5lGv_m7PgLiXoWXcgYxONMuWQzHFUVKs72XjlL_Cm_uLxseYWrg7d-znBrCpa967h5p4CEQZYAV"/, height="250 px", align="right">
+</p>
 
-**Q2.** List two reasons why you think the pattern you observed may occur.
-
-![](https://lh6.googleusercontent.com/hnYwq0F19xNh13yyGsGQv5hEBwrRAzjs3RU5uNQ8jpmR1RkrtjsxAxmwF4r1I5lGv_m7PgLiXoWXcgYxONMuWQzHFUVKs72XjlL_Cm_uLxseYWrg7d-znBrCpa967h5p4CEQZYAV)
+Where has recent warming been the strongest? What else do you notice regarding spatial patterns of warming?
 
 Ok, did you come up with an explanation? There are several long standing explanations for the pattern listed below. New mechanisms have been uncovered in recent years so even if your explanation isn’t on the list below its possible future research will support your explanation.
 
@@ -31,26 +31,19 @@ It was long assumed that the biological impacts of climate change would be more 
 ### Metabolism and temperature dependence
 One way to gauge the impacts on organisms is to estimate how temperature changes rates of metabolism, which is sometimes referred to as the “fire of life”. Metabolism is the biochemical process by which organisms combine food with oxygen to release energy. "Metabolic rate tells you how fast the animal is living and thus its intensity of life," said study co-author Raymond Huey, a University of Washington biology professor. Increases in metabolism can require organisms to spend more time eating or conserving energy, reducing time and energy available for other processes.
 
+<p>
+<img src="https://lh4.googleusercontent.com/DUBhci9jvpJ63e3oSe7KB_f-mzJ_98PRWVnsS-ZeWAtWzSos-lkDVnOsavxLmTBzsbVARsVdcjoMxiRQ-S8OWt9RHMaVIr2-bJiZHpPv7u05gpY0yGmyFGQkmuAiZOPIPfgCZOZG"/, height="250 px", align="right">
+<img src="https://lh4.googleusercontent.com/pNbLVezV6CMWmT3mWAQkyJRbRrv2yjmHylF6g_yn769J7hAvvPpQed6Kl3lf-MB2pwMOdin_e3VAVH91LJX6Hs1H9OhrSBw6OIy5EbwFwWFFzdSS8idWhcgKYIsdS-GuE3f5qW1K"/, height="250 px", align="right">
+</p>
+
 Larger organisms require more energy, but they also gain some efficiency with size. Metabolic rate (MR) thus increases as a power of body mass (M): MR ~ M<sup>x</sup>. The precise value of x and the explanation for the value is a longstanding research topic. One source of efficiency is the scaling of surface area and volume. An animal’s surface area increases as the square whereas volume increases as the cube of its length. So larger animals have a lower ratio of surface area to volume, which decreases rates of heat loss from the surface. This source of efficiency would suggest that MR ~ M<sup>2/3</sup>. However, higher values around ¾ are often observed. One theory termed the Metabolic Theory of Ecology uses vascular branching patterns within organisms to argue the scaling is MR ~ M<sup>3/4</sup>.
 
-![](https://lh4.googleusercontent.com/DUBhci9jvpJ63e3oSe7KB_f-mzJ_98PRWVnsS-ZeWAtWzSos-lkDVnOsavxLmTBzsbVARsVdcjoMxiRQ-S8OWt9RHMaVIr2-bJiZHpPv7u05gpY0yGmyFGQkmuAiZOPIPfgCZOZG)
-
 How do the rates of biochemical reactions such as metabolism change with temperature? For many biochemical reactions to occur, molecules involved in the reaction need to be moving around with sufficient energy for an effective collision to occur. At any given temperature, molecules will have a distribution of kinetic energy (see figure above). Those molecules with energies exceeding the energy required for activation (activation energy, Ea), will participate in the biochemical reaction. At higher temperatures, the distribution shifts to the right. Even a small shift in the distribution results in many more molecules in the tail of the distribution that exceed Ea. This results in the increase in rates of biochemical reactions occurring much faster than the rate of temperature increase ([More info here](https://courses.lumenlearning.com/suny-introductory-chemistry/chapter/factors-that-affect-the-rate-of-reactions/)). Consequently, metabolic rate increases exponentially with body temperature temperature as depicted in the figure. Notice that the curve steepens at higher temperatures.
-
-  
-
-Let’s explore what the steepening curve means for increasing rates of energy use in cool and warm environments. We’ll consider ectothermic, or cold-blooded, organisms so we can assume that the animal’s body temperature approximates the temperature of its surroundings. On the figure below, start at a cool temperature along the curve and draw a horizontal arrow indicating a potential increase in body temperature. Next draw a horizontal arrow of the same length starting at a warmer temperature. For both horizontal arrows, draw vertical lines up to the metabolic rate curve. (You may need to try a few different locations and horizontal arrow lengths to get this to work within the figure.)
-
-![](https://lh4.googleusercontent.com/pNbLVezV6CMWmT3mWAQkyJRbRrv2yjmHylF6g_yn769J7hAvvPpQed6Kl3lf-MB2pwMOdin_e3VAVH91LJX6Hs1H9OhrSBw6OIy5EbwFwWFFzdSS8idWhcgKYIsdS-GuE3f5qW1K)
-
-**Q3.** Compare the lengths of the vertical lines representing the potential increase in metabolic rate. Use your drawing to explain whether a given temperature increase will increase metabolism more in a cold or warm environment.
 
 You can read [this article](https://www.nature.com/scitable/knowledge/library/body-size-and-temperature-why-they-matter-15157011/) to learn more about how body size and temperature determine metabolic rate.
 
 ### Does climate warming increase energy use more in tropical or temperate regions?**
 
 A team at the University of Washington led by then graduate student Michael Dillon, who is now a professor at the University of Wyoming, set out to quantify how fast climate warming would increase rates of energy use in different regions of the earth. The researchers used nearly 500 million temperature readings from more than 3,000 stations around the world to chart temperature increases from 1961 through 2009, then examined the effect of those increases on metabolism. What they found surprised them. We’ll use a visualization to recreate their analysis. 
-
-**Q4.** Use your knowledge from the previous two sections to state and explain two contrasting hypotheses for how climate warming increases rates of energy use in tropical (warm, low latitude) and temperate (cool, high latitude) regions.
 
 As a preliminary step in creating the visualization, weather stations were selected to represent a wide range of latitudes across multiple climate zones. The map below depicts which climate region each station is located in. These weather stations were determined by data availability from the beginning of the traditional reference period for climate studies (1961) until the current year (2020). 
