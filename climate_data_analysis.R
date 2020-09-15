@@ -18,7 +18,8 @@ metabolics <- data.frame("taxon" = c("unicells", "plants", "invertebrates", "amp
 metabolic_rate <- function(b0, m, E, temp){
   #k - Boltzmann constant (eV/K, relates temperature to energy) 
   k = 0.000086173
-  return(b0*(m^(3/4))*exp(-E/(k*temp)))
+  #return(b0*(m^(3/4))*exp(-E/(k*temp)))
+  return(b0*exp(-E/(k*temp)))
 }
 
 #Convert TMIN/TMAX to TAVG for standardized temperature methodology

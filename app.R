@@ -26,7 +26,8 @@ metabolics <- data.frame("taxon" = c("unicells", "plants", "invertebrates", "amp
 metabolic_rate <- function(b0, m, E, temp){
     #k - Boltzmann constant (eV/K, relates temperature to energy) 
     k = 0.000086173
-    return(b0*(m^(3/4))*exp(-E/(k*temp)))
+    #return(b0*(m^(3/4))*exp(-E/(k*temp)))
+    return(b0*exp(-E/(k*temp)))
 }
 
 
@@ -243,12 +244,13 @@ get_taxon_averages <- function(taxon, taxon_metabolics){
 }
 
 
-plot_taxon <- function(taxon = "average", mass){
+plot_taxon <- function(taxon = "average", mass = NULL){
     if(is.null(taxon)){taxon <- "average"}
     column_id <- str_c("mean_", taxon)
-    mass <- as.integer(mass)
+    #mass <- as.integer(mass)
     available_mass <- ((metabolics[which(metabolics$taxon == taxon), "mass_min"] + metabolics[which(metabolics$taxon == taxon), "mass_max"])/2)
     available_mass <- as.integer(available_mass)
+    mass <- available_mass
     if(mass == available_mass){
         toastr_info("Rendering default plots")
         mexico_climate <- read_rds(str_c("./dat/climate-analysis/", "tlaxcala_mexico", "_means.csv")) 
@@ -559,21 +561,23 @@ ui <- fluidPage(
                                        "Amphibians" = "amphibians",
                                        "Reptiles" = "reptiles",
                                        "Average" = "average"),
-                        selected = "average"),
-            sliderInput(
-                inputId = "mass",
-                label = "Taxon mass",
-                value = (metabolics$mass_max[6] + metabolics$mass_min[6])/2,
-                min = metabolics$mass_min[6],
-                max = metabolics$mass_max[6],
-                post = "g",
-                animate = FALSE#, 
+                        selected = "average")#,
+            # sliderInput(
+            #     inputId = "mass",
+            #     label = "Taxon mass",
+            #     value = (metabolics$mass_max[6] + metabolics$mass_min[6])/2,
+            #     min = metabolics$mass_min[6],
+            #     max = metabolics$mass_max[6],
+            #     post = "g",
+            #     animate = FALSE#, 
+            
                 # lineCap = "round",
                 # fgColor = "#428BCA",
                 # inputColor = "#428BCA",
                 # width = "150px",
                 # immediate = FALSE
-            )),
+            #)
+            ),
         # Show a plot of the generated distribution
         
         plotlyOutput("metaplot", height = "100%") %>% withSpinner(color = "#228B22"),
@@ -592,22 +596,24 @@ server <- function(input, output, session) {
     observeEvent(input$taxon, {
         if(!is.null(input$taxon)){
             metabolic_inf <- metabolics[which(metabolics$taxon == input$taxon),]
-            updateSliderInput(
-                session = session,
-                inputId = "mass",
-                value = (metabolic_inf$mass_max + metabolic_inf$mass_min)/2,
-                min = metabolic_inf$mass_min,
-                max = metabolic_inf$mass_max,
-                step = ceiling({(metabolic_inf$mass_max - metabolic_inf$mass_min)/10}),
-            )
-            output$metaplot <- renderPlotly(plot_taxon(taxon = input$taxon, mass = (metabolic_inf$mass_max + metabolic_inf$mass_min)/2))}
+            # updateSliderInput(
+            #     session = session,
+            #     inputId = "mass",
+            #     value = (metabolic_inf$mass_max + metabolic_inf$mass_min)/2,
+            #     min = metabolic_inf$mass_min,
+            #     max = metabolic_inf$mass_max,
+            #     step = ceiling({(metabolic_inf$mass_max - metabolic_inf$mass_min)/10}),
+            # )
+            output$metaplot <- renderPlotly(plot_taxon(taxon = input$taxon#, mass = (metabolic_inf$mass_max + metabolic_inf$mass_min)/2)
+                                            ))
+            }
     })
     
-    observeEvent(input$mass, {
-        metabolic_inf <- metabolics[which(metabolics$taxon == input$taxon),]
-        if(as.integer(input$mass) != as.integer((metabolic_inf$mass_max + metabolic_inf$mass_min)/2)){
-        output$metaplot <- renderPlotly(plot_taxon(taxon = input$taxon, mass = input$mass))}
-    })
+    # observeEvent(input$mass, {
+    #     metabolic_inf <- metabolics[which(metabolics$taxon == input$taxon),]
+    #     if(as.integer(input$mass) != as.integer((metabolic_inf$mass_max + metabolic_inf$mass_min)/2)){
+    #     output$metaplot <- renderPlotly(plot_taxon(taxon = input$taxon, mass = input$mass))}
+    # })
     
     colors = c("red", "orange", "green", "blue")
     zones = c("Tropical zone", "Subtropical zone", "Temperate zone", "Polar/subpolar zone")
