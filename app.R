@@ -8,9 +8,11 @@ library(shinyWidgets)
 library(shinycssloaders)
 library(shinytoastr)
 library(mathjaxr)
+library(cicerone)
 # library(mapdeck)
 # library(sp)
 library(leaflet)
+library(shinyBS)
 #Data source: https://www.nature.com/articles/nature09407
 #Mass is is grams 
 metabolics <- data.frame("taxon" = c("unicells", "plants", "invertebrates", "amphibians", "reptiles", "average"),
@@ -346,6 +348,7 @@ plot_taxon <- function(taxon = "average", mass = NULL){
             xaxis = list(
                 showspikes = TRUE,
                 title = "Date",
+                range = c(as.Date('1985-01-01'),as.Date('2020-01-01')),
                 rangeselector = list(
                     buttons = list(
                         list(
@@ -423,10 +426,12 @@ plot_taxon <- function(taxon = "average", mass = NULL){
         #              line = list(dash = "dot",
         #                          color = "grey"),
         #              showlegend = FALSE) %>% 
+        
         layout(
             title = str_c("Metabolism and temperature means at 5 year intervals"),
             xaxis = list(
                 title = "Date",
+                range = c(as.Date('1985-01-01'),as.Date('2020-01-01')),
                 showspikes = TRUE,
                 rangeselector = list(
                     buttons = list(
@@ -528,6 +533,7 @@ plot_taxon <- function(taxon = "average", mass = NULL){
     toastr_success("Plots rendered")
     return(master_plots)}
 
+
 # Define UI for application 
 ui <- fluidPage(
     # Application title
@@ -547,6 +553,7 @@ ui <- fluidPage(
         # p("$$B(m,T) = b_{0}m^{3/4}e^{-E/kT}$$"),
         # includeMarkdown("./intro3.md"),
         #hr(),
+        
         dropdownButton(
             tags$h3("Plot Settings"),
             circle = TRUE, status = "info", icon = icon("gear"), width = "300px",
@@ -585,14 +592,14 @@ ui <- fluidPage(
                  and the percent metabolic rate change from baseline (1961-1990, 
                  standard reference period) are plotted here for each weather station. 
                  Grey dashed lines represent means of the standard reference period.
-                 Click the settings icon above to change the taxon and mass inputs 
+                 Click the settings icon above to change the taxon 
                  in this interactive graphic. ")
+        
     ))
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
     #taxon <- reactive({input$taxon})
-    
     observeEvent(input$taxon, {
         if(!is.null(input$taxon)){
             metabolic_inf <- metabolics[which(metabolics$taxon == input$taxon),]
