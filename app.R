@@ -13,6 +13,7 @@ library(cicerone)
 # library(sp)
 library(leaflet)
 library(shinyBS)
+library(shinyjs)
 #Data source: https://www.nature.com/articles/nature09407
 #Mass is is grams 
 metabolics <- data.frame("taxon" = c("unicells", "plants", "invertebrates", "amphibians", "reptiles", "average"),
@@ -291,11 +292,11 @@ plot_taxon <- function(taxon = "average", mass = NULL){
     #FIX START DATES (Point locations)
     climate_plot <- plot_ly(brazil_climate[2:length(brazil_climate[[1]]),], x = ~end_date) %>%
         #add_lines(y = ~TAVG.K) %>% 
-        add_trace(type = "scatter", data = yakima_climate[2:length(yakima_climate[[1]]),], y = ~mean_tavg - yakima_climate[1,"mean_tavg"], mode = 'lines+markers', name = "Washington, USA", color = 'green') %>%
-        add_trace(type = "scatter", data = brazil_climate[2:length(brazil_climate[[1]]),], y = ~mean_tavg - brazil_climate[1,"mean_tavg"], mode = 'lines+markers', name = "Campinas, BR", color = 'red') %>% 
-        add_trace(type = "scatter", data = mexico_climate[2:length(mexico_climate[[1]]),], y = ~mean_tavg - mexico_climate[1,"mean_tavg"], mode = 'lines+markers', name = "Tlaxcala, MX", color = 'blue') %>% 
-        add_trace(type = "scatter", data = columbia_climate[2:length(columbia_climate[[1]]),], y = ~mean_tavg - columbia_climate[1,"mean_tavg"], mode = 'lines+markers', name = "C. Alf. Bl., CO", color = 'pink') %>% 
-        add_trace(type = "scatter", data = greenland_climate[2:length(greenland_climate[[1]]),], y = ~mean_tavg - greenland_climate[1,"mean_tavg"], mode = 'lines+markers', name = "Danmarkshavn, GL", color = 'violet') %>% 
+        add_trace(type = "scatter", data = yakima_climate[2:length(yakima_climate[[1]]),], y = ~mean_tavg - yakima_climate[1,"mean_tavg"], mode = 'lines+markers', name = "Washington, USA", color = 'green', legendgroup="yakima") %>%
+        add_trace(type = "scatter", data = brazil_climate[2:length(brazil_climate[[1]]),], y = ~mean_tavg - brazil_climate[1,"mean_tavg"], mode = 'lines+markers', name = "Campinas, BR", color = 'red', legendgroup="brazil") %>% 
+        add_trace(type = "scatter", data = mexico_climate[2:length(mexico_climate[[1]]),], y = ~mean_tavg - mexico_climate[1,"mean_tavg"], mode = 'lines+markers', name = "Tlaxcala, MX", color = 'blue', legendgroup="mexico") %>% 
+        add_trace(type = "scatter", data = columbia_climate[2:length(columbia_climate[[1]]),], y = ~mean_tavg - columbia_climate[1,"mean_tavg"], mode = 'lines+markers', name = "C. Alf. Bl., CO", color = 'pink', legendgroup="columbia") %>% 
+        add_trace(type = "scatter", data = greenland_climate[2:length(greenland_climate[[1]]),], y = ~mean_tavg - greenland_climate[1,"mean_tavg"], mode = 'lines+markers', name = "Danmarkshavn, GL", color = 'violet', legendgroup="greenland") %>% 
         add_segments(x = greenland_climate[2, "start_date"], 
                      xend = greenland_climate[9, "end_date"], 
                      y = 0,
@@ -303,6 +304,7 @@ plot_taxon <- function(taxon = "average", mass = NULL){
                      name = "Reference Period",
                      line = list(dash = "dot",
                                  color = "grey"),
+                     legendgroup = "reference",
                      showlegend = TRUE) %>% 
         # add_segments(x = greenland_climate[2, "start_date"], 
         #              xend = greenland_climate[9, "end_date"], 
@@ -373,11 +375,11 @@ plot_taxon <- function(taxon = "average", mass = NULL){
     
     metabolism_plot <- plot_ly(brazil_climate[2:length(brazil_climate[[1]]),], x = ~end_date) %>%
         #add_lines(y = ~TAVG.K) %>% 
-        add_trace(type = "scatter", data = yakima_climate[2:length(yakima_climate[[1]]),], y = yakima_climate[2:length(yakima_climate[[1]]),column_id] - yakima_climate[1,column_id], mode = 'lines+markers', name = "Washington, USA", color = 'green', showlegend = FALSE) %>%
-        add_trace(type = "scatter", data = brazil_climate[2:length(brazil_climate[[1]]),], y = brazil_climate[2:length(brazil_climate[[1]]),column_id] - brazil_climate[1,column_id], mode = 'lines+markers', name = "Campinas, BR", color = 'red', showlegend = FALSE) %>% 
-        add_trace(type = "scatter", data = mexico_climate[2:length(mexico_climate[[1]]),], y = mexico_climate[2:length(mexico_climate[[1]]),column_id] - mexico_climate[1,column_id], mode = 'lines+markers', name = "Tlaxcala, MX", color = 'blue', showlegend = FALSE) %>%
-        add_trace(type = "scatter", data = columbia_climate[2:length(columbia_climate[[1]]),], y = columbia_climate[2:length(columbia_climate[[1]]),column_id] - columbia_climate[1,column_id], mode = 'lines+markers', name = "C. Alf. Bl., CO", color = 'pink', showlegend = FALSE) %>%
-        add_trace(type = "scatter", data = greenland_climate[2:length(greenland_climate[[1]]),], y = greenland_climate[2:length(greenland_climate[[1]]),column_id] - greenland_climate[1,column_id], mode = 'lines+markers', name = "Danmarkshavn, GL", color = 'violet', showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = yakima_climate[2:length(yakima_climate[[1]]),], y = yakima_climate[2:length(yakima_climate[[1]]),column_id] - yakima_climate[1,column_id], mode = 'lines+markers', name = "Washington, USA", color = 'green', legendgroup = "yakima", showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = brazil_climate[2:length(brazil_climate[[1]]),], y = brazil_climate[2:length(brazil_climate[[1]]),column_id] - brazil_climate[1,column_id], mode = 'lines+markers', name = "Campinas, BR", color = 'red', legendgroup = "brazil", showlegend = FALSE) %>% 
+        add_trace(type = "scatter", data = mexico_climate[2:length(mexico_climate[[1]]),], y = mexico_climate[2:length(mexico_climate[[1]]),column_id] - mexico_climate[1,column_id], mode = 'lines+markers', name = "Tlaxcala, MX", color = 'blue', legendgroup = "mexico", showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = columbia_climate[2:length(columbia_climate[[1]]),], y = columbia_climate[2:length(columbia_climate[[1]]),column_id] - columbia_climate[1,column_id], mode = 'lines+markers', name = "C. Alf. Bl., CO", color = 'pink', legendgroup = "columbia", showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = greenland_climate[2:length(greenland_climate[[1]]),], y = greenland_climate[2:length(greenland_climate[[1]]),column_id] - greenland_climate[1,column_id], mode = 'lines+markers', name = "Danmarkshavn, GL", color = 'violet', legendgroup = "greenland", showlegend = FALSE) %>%
         add_segments(x = greenland_climate[2, "start_date"], 
                      xend = greenland_climate[9, "end_date"], 
                      y = 0,
@@ -385,6 +387,7 @@ plot_taxon <- function(taxon = "average", mass = NULL){
                      name = "Reference Period",
                      line = list(dash = "dot",
                                  color = "grey"),
+                     legendgroup = "reference",
                      showlegend = FALSE) %>% 
         # add_segments(x = greenland_climate[2, "start_date"], 
         #              xend = greenland_climate[9, "end_date"], 
@@ -428,7 +431,7 @@ plot_taxon <- function(taxon = "average", mass = NULL){
         #              showlegend = FALSE) %>% 
         
         layout(
-            title = str_c("Metabolism and temperature means at 5 year intervals"),
+            title = str_c("Metabolism and temperature averages"),
             xaxis = list(
                 title = "Date",
                 range = c(as.Date('1985-01-01'),as.Date('2020-01-01')),
@@ -458,11 +461,11 @@ plot_taxon <- function(taxon = "average", mass = NULL){
     
     metabolism_percent_plot <- plot_ly(brazil_climate[2:length(brazil_climate[[1]]),], x = ~end_date) %>%
         #add_lines(y = ~TAVG.K) %>%
-        add_trace(type = "scatter", data = yakima_climate[2:length(yakima_climate[[1]]),], y = ((yakima_climate[2:length(yakima_climate[[1]]),column_id] - yakima_climate[1, column_id]) / yakima_climate[1, column_id])*100, mode = 'lines+markers', name = "Washington, USA", color = 'green', showlegend = FALSE) %>%
-        add_trace(type = "scatter", data = brazil_climate[2:length(brazil_climate[[1]]),], y = ((brazil_climate[2:length(brazil_climate[[1]]),column_id] - brazil_climate[1, column_id]) / brazil_climate[1, column_id])*100, mode = 'lines+markers', name = "Campinas, BR", color = 'red', showlegend = FALSE) %>%
-        add_trace(type = "scatter", data = mexico_climate[2:length(mexico_climate[[1]]),], y = ((mexico_climate[2:length(mexico_climate[[1]]),column_id] - mexico_climate[1, column_id]) / mexico_climate[1, column_id])*100, mode = 'lines+markers', name = "Tlaxcala, MX", color = 'blue', showlegend = FALSE) %>%
-        add_trace(type = "scatter", data = columbia_climate[2:length(columbia_climate[[1]]),], y = ((columbia_climate[2:length(columbia_climate[[1]]),column_id] - columbia_climate[1, column_id]) / columbia_climate[1, column_id])*100, mode = 'lines+markers', name = "C. Alf. Bl., CO", color = 'pink', showlegend = FALSE) %>%
-        add_trace(type = "scatter", data = greenland_climate[2:length(greenland_climate[[1]]),], y = ((greenland_climate[2:length(greenland_climate[[1]]),column_id] - greenland_climate[1, column_id]) / greenland_climate[1, column_id])*100, mode = 'lines+markers', name = "Danmarkshavn, GL", color = 'violet', showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = yakima_climate[2:length(yakima_climate[[1]]),], y = ((yakima_climate[2:length(yakima_climate[[1]]),column_id] - yakima_climate[1, column_id]) / yakima_climate[1, column_id])*100, mode = 'lines+markers', name = "Washington, USA", color = 'green',legendgroup="yakima", showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = brazil_climate[2:length(brazil_climate[[1]]),], y = ((brazil_climate[2:length(brazil_climate[[1]]),column_id] - brazil_climate[1, column_id]) / brazil_climate[1, column_id])*100, mode = 'lines+markers', name = "Campinas, BR", color = 'red', legendgroup="brazil", showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = mexico_climate[2:length(mexico_climate[[1]]),], y = ((mexico_climate[2:length(mexico_climate[[1]]),column_id] - mexico_climate[1, column_id]) / mexico_climate[1, column_id])*100, mode = 'lines+markers', name = "Tlaxcala, MX", color = 'blue', legendgroup="mexico", showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = columbia_climate[2:length(columbia_climate[[1]]),], y = ((columbia_climate[2:length(columbia_climate[[1]]),column_id] - columbia_climate[1, column_id]) / columbia_climate[1, column_id])*100, mode = 'lines+markers', name = "C. Alf. Bl., CO", color = 'pink', legendgroup="columbia", showlegend = FALSE) %>%
+        add_trace(type = "scatter", data = greenland_climate[2:length(greenland_climate[[1]]),], y = ((greenland_climate[2:length(greenland_climate[[1]]),column_id] - greenland_climate[1, column_id]) / greenland_climate[1, column_id])*100, mode = 'lines+markers', name = "Danmarkshavn, GL", color = 'violet', legendgroup="greenland", showlegend = FALSE) %>%
         add_segments(x = greenland_climate[2, "start_date"], 
                      xend = greenland_climate[9, "end_date"], 
                      y = greenland_climate[1, column_id], 
@@ -470,39 +473,40 @@ plot_taxon <- function(taxon = "average", mass = NULL){
                      name = "Reference Period",
                      line = list(dash = "dot",
                                  color = "grey"),
+                     legendgroup = "reference",
                      showlegend = FALSE) %>% 
-        add_segments(x = mexico_climate[2, "start_date"], 
-                     xend = mexico_climate[9, "end_date"], 
-                     y = mexico_climate[1, column_id], 
-                     yend = mexico_climate[1, column_id], 
-                     name = "Reference Period",
-                     line = list(dash = "dot",
-                                 color = "grey"),
-                     showlegend = FALSE) %>% 
-        add_segments(x = brazil_climate[2, "start_date"], 
-                     xend = brazil_climate[9, "end_date"], 
-                     y = brazil_climate[1, column_id], 
-                     yend = brazil_climate[1, column_id], 
-                     name = "Reference Period",
-                     line = list(dash = "dot",
-                                 color = "grey"),
-                     showlegend = FALSE) %>% 
-        add_segments(x = yakima_climate[2, "start_date"], 
-                     xend = yakima_climate[9, "end_date"], 
-                     y = yakima_climate[1, column_id], 
-                     yend = yakima_climate[1, column_id], 
-                     name = "Reference Period",
-                     line = list(dash = "dot",
-                                 color = "grey"),
-                     showlegend = FALSE) %>% 
-        add_segments(x = columbia_climate[2, "start_date"], 
-                     xend = columbia_climate[9, "end_date"], 
-                     y = columbia_climate[1, column_id], 
-                     yend = columbia_climate[1, column_id], 
-                     name = "Reference Period",
-                     line = list(dash = "dot",
-                                 color = "grey"),
-                     showlegend = FALSE) %>% 
+        # add_segments(x = mexico_climate[2, "start_date"], 
+        #              xend = mexico_climate[9, "end_date"], 
+        #              y = mexico_climate[1, column_id], 
+        #              yend = mexico_climate[1, column_id], 
+        #              name = "Reference Period",
+        #              line = list(dash = "dot",
+        #                          color = "grey"),
+        #              showlegend = FALSE) %>% 
+        # add_segments(x = brazil_climate[2, "start_date"], 
+        #              xend = brazil_climate[9, "end_date"], 
+        #              y = brazil_climate[1, column_id], 
+        #              yend = brazil_climate[1, column_id], 
+        #              name = "Reference Period",
+        #              line = list(dash = "dot",
+        #                          color = "grey"),
+        #              showlegend = FALSE) %>% 
+        # add_segments(x = yakima_climate[2, "start_date"], 
+        #              xend = yakima_climate[9, "end_date"], 
+        #              y = yakima_climate[1, column_id], 
+        #              yend = yakima_climate[1, column_id], 
+        #              name = "Reference Period",
+        #              line = list(dash = "dot",
+        #                          color = "grey"),
+        #              showlegend = FALSE) %>% 
+        # add_segments(x = columbia_climate[2, "start_date"], 
+        #              xend = columbia_climate[9, "end_date"], 
+        #              y = columbia_climate[1, column_id], 
+        #              yend = columbia_climate[1, column_id], 
+        #              name = "Reference Period",
+        #              line = list(dash = "dot",
+        #                          color = "grey"),
+        #              showlegend = FALSE) %>% 
         layout(
             title = str_c("Metabolism and temperature means at 5 year intervals"),
             xaxis = list(
@@ -532,12 +536,40 @@ plot_taxon <- function(taxon = "average", mass = NULL){
     master_plots <- subplot(climate_plot, metabolism_plot, metabolism_percent_plot, shareX = TRUE, nrows = 3, titleY = TRUE) 
     toastr_success("Plots rendered")
     return(master_plots)}
-
+# 
+# guide <- Cicerone$
+#     new()$
+#     step(
+#         el = "metaplot",
+#         title = "Visualization",
+#         description = "Welcome to our Climate Warming and Ectotherm Metabolism tool. We will go over the components in this tool. Click next to get started."
+#     )$
+#     step(
+#         el = "metaplot",
+#         title = "Dates",
+#         description = 'In each of the subplots, averages are compared to a 1961-1990 baseline (represented with a grey dashed line) and are calculated every five years from 1985 to 2020.
+#                             To adjust the length of the date interval, click on the buttons in the top left corner. They represent one year, six years, and twenty years respectively.
+#                             You can also adjust the date range by dragging the vertical bars in the interactive slider labeled "Date" located under the plots.
+#                         If you would like to reset the range, hover over the plot and press the house icon that appears in the top right corner.'
+#     )$
+#     step(
+#         el = "metaplot",
+#         title = "Weather Stations",
+#         description = 'The legend located to the right of the plots specifies the weather station corresponding to each color.
+#                            This legend is interactive. Click on a location in the legend to toggle it between shown and hidden.
+#                            Double-click a location in the legend if you would like to isolate a single location.'
+#     )$
+#     step(
+#         el = "settings",
+#         title = "Plot settings",
+#         description = "Lastly, you can choose which taxanomic group you would like to graph by clicking the plot settings button."
+#     )
 
 # Define UI for application 
 ui <- fluidPage(
     # Application title
     useToastr(),
+    # use_cicerone(),
     withMathJax(),
     tags$head(tags$link(rel="shortcut icon", href="./favicon.ico")),
     titlePanel("Climate Warming and Ectotherm Metabolism"),
@@ -554,6 +586,15 @@ ui <- fluidPage(
         # includeMarkdown("./intro3.md"),
         #hr(),
         
+        # actionBttn(
+        #     inputId = "tour",
+        #     label = "Take a tour!", 
+        #     style = "material-flat",
+        #     color = "success",
+        #     size = "sm"
+        # ),
+        # hr(),
+        
         dropdownButton(
             tags$h3("Plot Settings"),
             circle = TRUE, status = "info", icon = icon("gear"), width = "300px",
@@ -568,7 +609,8 @@ ui <- fluidPage(
                                        "Amphibians" = "amphibians",
                                        "Reptiles" = "reptiles",
                                        "Average" = "average"),
-                        selected = "average")#,
+                        selected = "average"),
+            inputID = "settings"#,
             # sliderInput(
             #     inputId = "mass",
             #     label = "Taxon mass",
@@ -600,6 +642,9 @@ ui <- fluidPage(
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
     #taxon <- reactive({input$taxon})
+    
+    # observeEvent(input$tour, guide$init()$start())
+    
     observeEvent(input$taxon, {
         if(!is.null(input$taxon)){
             metabolic_inf <- metabolics[which(metabolics$taxon == input$taxon),]
