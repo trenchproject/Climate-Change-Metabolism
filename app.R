@@ -508,7 +508,7 @@ plot_taxon <- function(taxon = "average", mass = NULL){
         #                          color = "grey"),
         #              showlegend = FALSE) %>% 
         layout(
-            title = str_c("Metabolism and temperature means at 5 year intervals"),
+            title = str_c("Metabolism and temperature five-year means"),
             xaxis = list(
                 title = "Date",
                 showspikes = TRUE,
@@ -536,40 +536,53 @@ plot_taxon <- function(taxon = "average", mass = NULL){
     master_plots <- subplot(climate_plot, metabolism_plot, metabolism_percent_plot, shareX = TRUE, nrows = 3, titleY = TRUE) 
     toastr_success("Plots rendered")
     return(master_plots)}
-# 
-# guide <- Cicerone$
-#     new()$
-#     step(
-#         el = "metaplot",
-#         title = "Visualization",
-#         description = "Welcome to our Climate Warming and Ectotherm Metabolism tool. We will go over the components in this tool. Click next to get started."
-#     )$
-#     step(
-#         el = "metaplot",
-#         title = "Dates",
-#         description = 'In each of the subplots, averages are compared to a 1961-1990 baseline (represented with a grey dashed line) and are calculated every five years from 1985 to 2020.
-#                             To adjust the length of the date interval, click on the buttons in the top left corner. They represent one year, six years, and twenty years respectively.
-#                             You can also adjust the date range by dragging the vertical bars in the interactive slider labeled "Date" located under the plots.
-#                         If you would like to reset the range, hover over the plot and press the house icon that appears in the top right corner.'
-#     )$
-#     step(
-#         el = "metaplot",
-#         title = "Weather Stations",
-#         description = 'The legend located to the right of the plots specifies the weather station corresponding to each color.
-#                            This legend is interactive. Click on a location in the legend to toggle it between shown and hidden.
-#                            Double-click a location in the legend if you would like to isolate a single location.'
-#     )$
-#     step(
-#         el = "settings",
-#         title = "Plot settings",
-#         description = "Lastly, you can choose which taxanomic group you would like to graph by clicking the plot settings button."
-#     )
+
+guide <- Cicerone$
+    new()$
+    step(
+        el = "metaplot",
+        title = "Visualization",
+        description = "Welcome to our Climate Warming and Ectotherm Metabolism tool. We will go over the components in this tool. Click next to get started."
+    )$
+    step(
+        el = "metaplot",
+        title = "Plots",
+        description = HTML('The top subplot shows the change in average air temperature, the middle subplot shows the average metabolic rate change, and the bottom subplot shows the change in average metabolic rate percent change. <br>
+        For each metric, averages are compared to a 1961-1990 baseline (represented with a grey dashed line) and are calculated for each weather station.)')
+    )$
+    step(
+        el = "metaplot",
+        title = "Weather stations",
+        description = HTML('Each weather station is represented by a separate colored line. <br>
+        Note how air temperature, metabolic rate change, and metabolic rate percent change vary by weather station. Why do you think that is? (Hint: see visualization above)')
+    )$
+    step(
+        el = "metaplot",
+        title = "Legend",
+        description = HTML('The legend located to the right of the plots specifies the weather station corresponding to each color and allows you to select specific stations. <br>
+                        Double-click on <b>"Danmarkshavn, GL"<b> to isolate that weather station. Notice how the scale of the middle subplot automatically adjusts to become more readable.
+                        Double-click the location again to display all locations.')
+    )$
+    step(
+        el = "metaplot",
+        title = "Date",
+        description = HTML('Notice that the averages for each suplot is plotted every five years and are represented by separate data points. <br>
+        The length of the date interval (x-axis) can be adjusted using the buttons in the top left corner. They stand for one year, six years, and twenty years respectively. <br>
+        You can also adjust the date range by dragging the vertical bars in the interactive slider labeled <b>"Date"<b> located below the plots. <br>
+        To reset the range, hover over the plot and press the house icon that appears in the top right corener.')
+    )$
+    step(
+        el = "settings",
+        title = "Plot settings",
+        description = "Lastly, you can choose which taxanomic group you would like to graph by clicking the plot settings button."
+    )
 
 # Define UI for application 
 ui <- fluidPage(
     # Application title
     useToastr(),
-    # use_cicerone(),
+    use_cicerone(),
+    useShinyjs(),
     withMathJax(),
     tags$head(tags$link(rel="shortcut icon", href="./favicon.ico")),
     titlePanel("Climate Warming and Ectotherm Metabolism"),
@@ -586,14 +599,14 @@ ui <- fluidPage(
         # includeMarkdown("./intro3.md"),
         #hr(),
         
-        # actionBttn(
-        #     inputId = "tour",
-        #     label = "Take a tour!", 
-        #     style = "material-flat",
-        #     color = "success",
-        #     size = "sm"
-        # ),
-        # hr(),
+        actionBttn(
+            inputId = "tour",
+            label = "Take a tour!",
+            style = "material-flat",
+            color = "success",
+            size = "sm"
+        ),
+        hr(),
         
         dropdownButton(
             tags$h3("Plot Settings"),
@@ -643,7 +656,7 @@ ui <- fluidPage(
 server <- function(input, output, session) {
     #taxon <- reactive({input$taxon})
     
-    # observeEvent(input$tour, guide$init()$start())
+    observeEvent(input$tour, guide$init()$start())
     
     observeEvent(input$taxon, {
         if(!is.null(input$taxon)){
