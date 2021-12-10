@@ -537,46 +537,6 @@ plot_taxon <- function(taxon = "average", mass = NULL){
     toastr_success("Plots rendered")
     return(master_plots)}
 
-guide <- Cicerone$
-    new()$
-    step(
-        el = "metaplot",
-        title = "Visualization",
-        description = "Welcome to our Climate Warming and Ectotherm Metabolism tool. We will go over the components in this tool. Click next to get started."
-    )$
-    step(
-        el = "metaplot",
-        title = "Plots",
-        description = HTML('The top subplot shows the change in average air temperature, the middle subplot shows the average metabolic rate change, and the bottom subplot shows the change in average metabolic rate percent change. <br>
-        For each metric, averages are compared to a 1961-1990 baseline (represented with a grey dashed line) and are calculated for each weather station.)')
-    )$
-    step(
-        el = "metaplot",
-        title = "Weather stations",
-        description = HTML('Each weather station is represented by a separate colored line. <br>
-        Note how air temperature, metabolic rate change, and metabolic rate percent change vary by weather station. Why do you think that is? (Hint: see visualization above)')
-    )$
-    step(
-        el = "metaplot",
-        title = "Legend",
-        description = HTML('The legend located to the right of the plots specifies the weather station corresponding to each color and allows you to select specific stations. <br>
-                        Double-click on <b>"Danmarkshavn, GL"<b> to isolate that weather station. Notice how the scale of the middle subplot automatically adjusts to become more readable.
-                        Double-click the location again to display all locations.')
-    )$
-    step(
-        el = "metaplot",
-        title = "Date",
-        description = HTML('Notice that the averages for each suplot is plotted every five years and are represented by separate data points. <br>
-        The length of the date interval (x-axis) can be adjusted using the buttons in the top left corner. They stand for one year, six years, and twenty years respectively. <br>
-        You can also adjust the date range by dragging the vertical bars in the interactive slider labeled <b>"Date"<b> located below the plots. <br>
-        To reset the range, hover over the plot and press the house icon that appears in the top right corener.')
-    )$
-    step(
-        el = "settings",
-        title = "Plot settings",
-        description = "Lastly, you can choose which taxanomic group you would like to graph by clicking the plot settings button."
-    )
-
 # Define UI for application 
 ui <- fluidPage(
     # Application title
@@ -599,14 +559,14 @@ ui <- fluidPage(
         # includeMarkdown("./intro3.md"),
         #hr(),
         
-        actionBttn(
-            inputId = "tour",
-            label = "Take a tour!",
-            style = "material-flat",
-            color = "success",
-            size = "sm"
-        ),
-        hr(),
+        # actionBttn(
+        #     inputId = "tour",
+        #     label = "Take a tour!",
+        #     style = "material-flat",
+        #     color = "success",
+        #     size = "sm"
+        # ),
+        # hr(),
         
         dropdownButton(
             tags$h3("Plot Settings"),
@@ -623,7 +583,8 @@ ui <- fluidPage(
                                        "Reptiles" = "reptiles",
                                        "Average" = "average"),
                         selected = "average"),
-            inputID = "settings"#,
+            inputID = "settings"
+            #,
             # sliderInput(
             #     inputId = "mass",
             #     label = "Taxon mass",
@@ -643,12 +604,10 @@ ui <- fluidPage(
         # Show a plot of the generated distribution
         
         plotlyOutput("metaplot", height = "100%") %>% withSpinner(color = "#228B22"),
-        helpText("Air Temperature means, metabolic rate means, 
-                 and the percent metabolic rate change from baseline (1961-1990, 
-                 standard reference period) are plotted here for each weather station. 
-                 Grey dashed lines represent means of the standard reference period.
-                 Click the settings icon above to change the taxon 
-                 in this interactive graphic. ")
+        
+        hr(),
+        
+        includeMarkdown("./tour.md")
         
     ))
 
