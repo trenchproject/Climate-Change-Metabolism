@@ -8,9 +8,6 @@ This activity is adapted from the following research article: Dillon, M. E., Wan
 
 Both observations of recent climate change and model projections of future climate change indicate faster warming toward the poles, particularly in the arctic. You can use [this mapping application made by NASA](https://data.giss.nasa.gov/gistemp/maps/index_v4.html) to explore global patterns of recent climate change. Choose to plot “anomalies”, which indicate differences in temperature between a selected period and a baseline period (the default baseline is 1951-1980). 
 
-<p>
-<img src="https://lh6.googleusercontent.com/hnYwq0F19xNh13yyGsGQv5hEBwrRAzjs3RU5uNQ8jpmR1RkrtjsxAxmwF4r1I5lGv_m7PgLiXoWXcgYxONMuWQzHFUVKs72XjlL_Cm_uLxseYWrg7d-znBrCpa967h5p4CEQZYAV"/, height="250 px", align="right">
-</p>
 
 Where has recent warming been the strongest? What else do you notice regarding spatial patterns of warming?
 
@@ -31,10 +28,6 @@ It was long assumed that the biological impacts of climate change would be more 
 ### Metabolism and temperature dependence
 One way to gauge the impacts on organisms is to estimate how temperature changes rates of metabolism, which is sometimes referred to as the “fire of life”. Metabolism is the biochemical process by which organisms combine food with oxygen to release energy. "Metabolic rate tells you how fast the animal is living and thus its intensity of life," said study co-author Raymond Huey, a University of Washington biology professor. Increases in metabolism can require organisms to spend more time eating or conserving energy, reducing time and energy available for other processes.
 
-<p>
-<img src="https://lh4.googleusercontent.com/DUBhci9jvpJ63e3oSe7KB_f-mzJ_98PRWVnsS-ZeWAtWzSos-lkDVnOsavxLmTBzsbVARsVdcjoMxiRQ-S8OWt9RHMaVIr2-bJiZHpPv7u05gpY0yGmyFGQkmuAiZOPIPfgCZOZG"/, height="250 px", align="right">
-<img src="https://lh4.googleusercontent.com/pNbLVezV6CMWmT3mWAQkyJRbRrv2yjmHylF6g_yn769J7hAvvPpQed6Kl3lf-MB2pwMOdin_e3VAVH91LJX6Hs1H9OhrSBw6OIy5EbwFwWFFzdSS8idWhcgKYIsdS-GuE3f5qW1K"/, height="250 px", align="right">
-</p>
 
 Larger organisms require more energy, but they also gain some efficiency with size. Metabolic rate (MR) thus increases as a power of body mass (M): MR ~ M<sup>x</sup>. The precise value of x and the explanation for the value is a longstanding research topic. One source of efficiency is the scaling of surface area and volume. An animal’s surface area increases as the square whereas volume increases as the cube of its length. So larger animals have a lower ratio of surface area to volume, which decreases rates of heat loss from the surface. This source of efficiency would suggest that MR ~ M<sup>2/3</sup>. However, higher values around ¾ are often observed. One theory termed the Metabolic Theory of Ecology uses vascular branching patterns within organisms to argue the scaling is MR ~ M<sup>3/4</sup>.
 
@@ -42,7 +35,7 @@ How do the rates of biochemical reactions such as metabolism change with tempera
 
 You can read [this article](https://www.nature.com/scitable/knowledge/library/body-size-and-temperature-why-they-matter-15157011/) to learn more about how body size and temperature determine metabolic rate.
 
-### Does climate warming increase energy use more in tropical or temperate regions?**
+### Does climate warming increase energy use more in tropical or temperate regions?
 
 A team at the University of Washington led by then graduate student Michael Dillon, who is now a professor at the University of Wyoming, set out to quantify how fast climate warming would increase rates of energy use in different regions of the earth. The researchers used nearly 500 million temperature readings from more than 3,000 stations around the world to chart temperature increases from 1961 through 2009, then examined the effect of those increases on metabolism. What they found surprised them. We’ll use a visualization to recreate their analysis. 
 
